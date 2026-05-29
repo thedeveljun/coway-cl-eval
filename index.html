@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>계곡 힐링 챌린지 트래커</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #1a3560; --navy-light: #2a4a80; --amber: #d4870f;
+      --leaf: #2d8a5e; --leaf-light: #3fae76;
+      --card: #ffffff; --text: #1a2535; --muted: #6b7a99;
+      --border: rgba(26,53,96,0.25); --green: #2d8a5e; --red: #c0392b;
+      --pass-bg: #e8f5ee; --fail-bg: #fdf0ee;
+      --radius-md: 8px; --radius-lg: 12px;
+    }
+    body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background: #f0f4f8; padding: 0.5rem; }
+    .app { max-width: 960px; margin: 0 auto; padding: 0 0 2rem; }
+
+    .header {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      padding: 0.7rem 1rem; color: white;
+      border-radius: var(--radius-lg); margin-bottom: 0.5rem;
+    }
+    .header h1 { font-size: 15px; font-weight: 500; margin-top: 4px; color: white; }
+    .header .sub { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 3px; line-height: 1.5; }
+    .event-date {
+      display: inline-flex; align-items: center;
+      background: var(--leaf); color: white; font-size: 12px; font-weight: 500;
+      padding: 3px 12px; border-radius: 20px;
+    }
+
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 0.5rem; }
+    .metric-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 6px 10px;
+    }
+    .metric-card .label { font-size: 10px; color: var(--muted); margin-bottom: 1px; }
+    .metric-card .value { font-size: 18px; font-weight: 500; }
+    .value.amber { color: var(--amber); }
+    .value.navy { color: var(--navy); }
+    .value.green { color: var(--green); }
+
+    .section-title {
+      font-size: 12px; font-weight: 500; color: var(--navy);
+      margin: 0 0 4px; border-left: 3px solid var(--amber); padding-left: 6px;
+    }
+
+    .table-wrap {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 0.5rem;
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead { background: var(--navy); color: white; }
+    thead th { padding: 5px 3px; font-weight: 500; font-size: 10px; text-align: center; white-space: nowrap; }
+    thead th:first-child { text-align: left; padding-left: 8px; min-width: 56px; position: sticky; left: 0; background: var(--navy); z-index: 2; }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f5f8ff; }
+    td { padding: 2px 3px; text-align: center; color: var(--text); }
+    td:first-child { text-align: left; padding-left: 8px; font-weight: 500; font-size: 11px; white-space: nowrap; position: sticky; left: 0; background: var(--card); z-index: 1; }
+    tbody tr:hover td:first-child { background: #f5f8ff; }
+    .cell-input {
+      width: 34px; height: 24px; text-align: center;
+      border: 2px solid #a0b0cc; border-radius: 4px;
+      font-size: 12px; background: #f8faff; color: var(--text);
+      padding: 0; outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .cell-input:focus { border-color: var(--navy); background: #e8eeff; }
+    .cell-input:not(:placeholder-shown) { background: white; border-color: var(--navy-light); }
+    .total-cell { font-weight: 600; color: var(--navy); font-size: 13px; }
+    .weekend-col { background: rgba(26,53,96,0.04); }
+    .col-highlight { background: rgba(213,135,15,0.10); }
+
+    .add-row {
+      display: flex; gap: 6px; padding: 6px 10px;
+      border-top: 1px solid var(--border); background: #fafbff;
+    }
+    .add-row input[type=text] {
+      flex: 1; height: 28px; padding: 0 8px;
+      border: 2px solid #a0b0cc; border-radius: 6px;
+      font-size: 11px; color: var(--text); background: white; outline: none;
+    }
+    .add-row input[type=text]:focus { border-color: var(--navy); }
+    .btn-add { height: 28px; padding: 0 10px; background: var(--navy); color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; }
+    .btn-add:hover { background: var(--navy-light); }
+    .btn-del { background: none; border: none; color: #c0392b; font-size: 14px; cursor: pointer; padding: 0 2px; line-height: 1; opacity: 0.5; }
+    .btn-del:hover { opacity: 1; }
+
+    /* ===== Goal status ===== */
+    .result-banner {
+      border-radius: var(--radius-lg); padding: 9px 12px; text-align: center;
+      font-size: 13px; font-weight: 600; margin-bottom: 0.5rem;
+    }
+    .result-pass { background: linear-gradient(135deg,#fbe7a8,#e8b94a); color: #7a5410; }
+    .result-wait { background: var(--pass-bg); color: var(--green); }
+
+    .goal-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 8px 11px; margin-bottom: 0.4rem;
+    }
+    .goal-card.met { border-color: var(--amber); background: #fffaf0; }
+    .goal-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+    .goal-label { font-size: 12px; font-weight: 600; color: var(--navy); }
+    .goal-label .way { display:inline-block; background:var(--amber); color:#fff; font-size:9px; padding:1px 6px; border-radius:8px; margin-right:5px; vertical-align:middle; }
+    .goal-num { font-size: 12px; color: var(--muted); }
+    .goal-num b { color: var(--navy); font-size: 15px; }
+    .goal-num.met b { color: var(--green); }
+    .bar-wrap { height: 7px; background: #e8ecf5; border-radius: 8px; overflow: hidden; }
+    .bar { height: 100%; border-radius: 8px; transition: width 0.3s; background: var(--navy-light); }
+    .bar.met { background: var(--amber); }
+    .or-text { text-align:center; font-size:11px; color:var(--muted); margin:3px 0; }
+
+    .sub-goal { display:flex; gap:8px; margin-top:6px; }
+    .sub-goal .sg { flex:1; }
+    .sg-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
+    .sg-label { font-size:11px; color:var(--text); }
+    .mini-input { width:42px; height:22px; text-align:center; border:2px solid #a0b0cc; border-radius:4px; font-size:12px; outline:none; color:var(--text); background:#f8faff; }
+    .mini-input:focus { border-color:var(--navy); background:#e8eeff; }
+    .sg-goal { font-size:10px; color:var(--muted); }
+
+    /* per person */
+    .person-progress { margin-bottom: 5px; }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+    .progress-name { font-size: 12px; font-weight: 500; color: var(--text); }
+    .progress-count { font-size: 11px; color: var(--muted); }
+    .progress-bar-wrap { height: 6px; background: #e8ecf5; border-radius: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 8px; transition: width 0.3s; }
+    .bar-pass { background: var(--green); }
+    .bar-almost { background: #f39c12; }
+    .bar-fail { background: #c0392b; }
+
+    .rule-box {
+      background: #fff8ea; border: 1px solid #f5d580;
+      border-radius: var(--radius-md); padding: 6px 10px;
+      margin-bottom: 0.5rem; font-size: 11px; color: #7a5700;
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .rule-item { display: flex; align-items: center; gap: 5px; }
+    .rule-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+    .footer-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 0.5rem; line-height:1.6; }
+    .reset-link { color: var(--muted); font-size: 11px; text-decoration: underline; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="event-date">🏕️ 계곡 힐링: 7/3(금) 예정</div>
+    <h1>서울남동총국 우수팀 "시원한 계곡에서 만나요!"</h1>
+    <div class="sub">기간: 5/28(목) ~ 6/12(금) &nbsp;|&nbsp; <b>팀 환산 60건</b> 또는 <b>신규렌탈 10건 + 코디 3명</b> 달성 시</div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric-card"><div class="label">팀 환산</div><div class="value amber" id="m-conv">0</div></div>
+    <div class="metric-card"><div class="label">목표</div><div class="value navy">60건</div></div>
+    <div class="metric-card"><div class="label">달성률</div><div class="value green" id="m-pct">0%</div></div>
+    <div class="metric-card"><div class="label">D-day</div><div class="value navy" id="m-dday">-</div></div>
+  </div>
+
+  <div class="section-title">일별 환산 실적 입력</div>
+  <div class="table-wrap">
+    <div class="table-scroll">
+      <table>
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="add-row">
+      <input type="text" id="new-name" placeholder="이름 입력 후 추가" onkeydown="if(event.key==='Enter')addPerson()">
+      <button class="btn-add" onclick="addPerson()">+ 추가</button>
+    </div>
+  </div>
+
+  <div class="section-title">목표 달성 현황</div>
+  <div class="result-banner result-wait" id="result-banner">목표를 향해 출발! 🚩</div>
+
+  <!-- Path 1 -->
+  <div class="goal-card" id="goal1">
+    <div class="goal-row">
+      <span class="goal-label"><span class="way">경로①</span>팀 환산</span>
+      <span class="goal-num" id="g1-num"><b>0</b> / 60건</span>
+    </div>
+    <div class="bar-wrap"><div class="bar" id="g1-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="or-text">— 또는 —</div>
+
+  <!-- Path 2 -->
+  <div class="goal-card" id="goal2">
+    <div class="goal-row">
+      <span class="goal-label"><span class="way">경로②</span>신규렌탈 + 코디 배출</span>
+    </div>
+    <div class="sub-goal">
+      <div class="sg">
+        <div class="sg-head">
+          <span class="sg-label">신규렌탈</span>
+          <input class="mini-input" type="text" inputmode="numeric" id="in-new" placeholder="0" onchange="setExtra('newRental',this.value)">
+        </div>
+        <div class="bar-wrap"><div class="bar" id="g2n-bar" style="width:0%"></div></div>
+        <div class="sg-goal">목표 10건</div>
+      </div>
+      <div class="sg">
+        <div class="sg-head">
+          <span class="sg-label">코디 배출</span>
+          <input class="mini-input" type="text" inputmode="numeric" id="in-codi" placeholder="0" onchange="setExtra('codi',this.value)">
+        </div>
+        <div class="bar-wrap"><div class="bar" id="g2c-bar" style="width:0%"></div></div>
+        <div class="sg-goal">목표 3명</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:0.6rem">팀원별 기여도 <span style="color:var(--muted);font-weight:400" id="percap-note"></span></div>
+  <div class="progress-section" id="progress-section"></div>
+
+  <div class="rule-box">
+    <div class="rule-item"><div class="rule-dot"></div>침대 · 테라솔 U.P · 에어컨 · 안마의자 · 음식물처리기: <b style="margin-left:3px">1.5건</b> 인정</div>
+    <div class="rule-item"><div class="rule-dot"></div>그 외 신규렌탈: <b style="margin-left:3px">1건</b></div>
+    <div class="rule-item"><div class="rule-dot"></div>음식물처리기는 <b style="margin-left:3px">27(화) 입력분부터</b> 인정</div>
+  </div>
+
+  <div class="footer-note">
+    셀에 <b>환산 건수</b>를 직접 입력하세요 (예: 1, 2, 1.5) — Enter: 아래로 / Tab: 옆으로 이동<br>
+    입력값은 자동 저장됩니다 · <span class="reset-link" onclick="resetAll()">전체 초기화</span>
+  </div>
+</div>
+
+<script>
+const GOAL_CONV = 60, GOAL_NEW = 10, GOAL_CODI = 3;
+const STORAGE_KEY = 'valley_tracker_v1';
+
+// 5/28(목) ~ 6/12(금)
+const DATES = [
+  {d:'5/28',w:'목'},{d:'5/29',w:'금'},{d:'5/30',w:'토'},{d:'5/31',w:'일'},
+  {d:'6/1',w:'월'},{d:'6/2',w:'화'},{d:'6/3',w:'수'},{d:'6/4',w:'목'},{d:'6/5',w:'금'},
+  {d:'6/6',w:'토'},{d:'6/7',w:'일'},{d:'6/8',w:'월'},{d:'6/9',w:'화'},
+  {d:'6/10',w:'수'},{d:'6/11',w:'목'},{d:'6/12',w:'금'}
+];
+const COL_COUNT = DATES.length;
+const WEEKEND_IDX = [2,3,9,10];     // 토/일
+const HIGHLIGHT_IDX = [COL_COUNT-1]; // 마감일 6/12
+
+const DEFAULT_PEOPLE = ['우영미','박행신','김태호','전숙경','박일녀','강승임','임병순','이은이']
+  .map(n => ({ name:n, vals:Array(COL_COUNT).fill('') }));
+
+let state = loadData();
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      // 길이 보정
+      s.people.forEach(p => {
+        if (!Array.isArray(p.vals)) p.vals = Array(COL_COUNT).fill('');
+        while (p.vals.length < COL_COUNT) p.vals.push('');
+        p.vals.length = COL_COUNT;
+      });
+      if (typeof s.newRental === 'undefined') s.newRental = '';
+      if (typeof s.codi === 'undefined') s.codi = '';
+      return s;
+    }
+  } catch(e) {}
+  return { people: DEFAULT_PEOPLE.map(p=>({name:p.name, vals:[...p.vals]})), newRental:'', codi:'' };
+}
+function saveData(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+
+function r1(n){ return Math.round(n*10)/10; }
+function getTotal(vals){ return r1(vals.reduce((a,b)=>a+(parseFloat(b)||0),0)); }
+function teamConv(){ return r1(state.people.reduce((a,p)=>a+getTotal(p.vals),0)); }
+
+function ddayText(){
+  const end = new Date(2026,5,12,23,59,59);
+  const diff = Math.ceil((end - new Date())/(864e5));
+  if (diff>0) return 'D-'+diff;
+  if (diff===0) return 'D-DAY';
+  return '마감';
+}
+
+/* ===== Header thead ===== */
+function buildHead(){
+  let html = '<th>이름</th>';
+  DATES.forEach((dt,i)=>{
+    const cls = WEEKEND_IDX.includes(i) ? ' class="weekend-col"' : (HIGHLIGHT_IDX.includes(i)?' class="col-highlight"':'');
+    html += `<th${cls}>${dt.d}<br>${dt.w}</th>`;
+  });
+  html += '<th>합계</th>';
+  document.getElementById('thead-row').innerHTML = html;
+}
+
+/* ===== Rows ===== */
+function buildRow(p, pi){
+  const tr = document.createElement('tr');
+  let html = `<td>${escapeHtml(p.name)} <button class="btn-del" onclick="delPerson(${pi})" title="삭제">×</button></td>`;
+  p.vals.forEach((v,ci)=>{
+    const cls = WEEKEND_IDX.includes(ci) ? ' class="weekend-col"' : (HIGHLIGHT_IDX.includes(ci)?' class="col-highlight"':'');
+    html += `<td${cls}><input class="cell-input" type="text" inputmode="decimal"
+      value="${v}" placeholder="-" data-pi="${pi}" data-ci="${ci}"
+      onchange="handleChange(this)" onkeydown="handleKey(event)"></td>`;
+  });
+  html += `<td class="total-cell">${getTotal(p.vals)}</td>`;
+  tr.innerHTML = html;
+  return tr;
+}
+
+function render(){
+  buildHead();
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML='';
+  state.people.forEach((p,pi)=>tbody.appendChild(buildRow(p,pi)));
+  document.getElementById('in-new').value = state.newRental;
+  document.getElementById('in-codi').value = state.codi;
+  document.getElementById('m-dday').textContent = ddayText();
+  refreshAll();
+}
+
+function refreshRowTotal(pi){
+  const row = document.getElementById('tbody').children[pi];
+  if(row) row.querySelector('.total-cell').textContent = getTotal(state.people[pi].vals);
+}
+
+function refreshAll(){
+  const conv = teamConv();
+  const newV = parseFloat(state.newRental)||0;
+  const codiV = parseFloat(state.codi)||0;
+
+  // metrics
+  document.getElementById('m-conv').textContent = conv;
+  document.getElementById('m-pct').textContent = Math.min(100,Math.round(conv/GOAL_CONV*100))+'%';
+
+  // path 1
+  const p1met = conv >= GOAL_CONV;
+  document.getElementById('g1-num').innerHTML = `<b>${conv}</b> / 60건`;
+  document.getElementById('g1-num').classList.toggle('met',p1met);
+  setBar('g1-bar', conv/GOAL_CONV, p1met);
+  document.getElementById('goal1').classList.toggle('met',p1met);
+
+  // path 2
+  const nMet = newV>=GOAL_NEW, cMet = codiV>=GOAL_CODI;
+  setBar('g2n-bar', newV/GOAL_NEW, nMet);
+  setBar('g2c-bar', codiV/GOAL_CODI, cMet);
+  const p2met = nMet && cMet;
+  document.getElementById('goal2').classList.toggle('met',p2met);
+
+  // banner
+  const done = p1met || p2met;
+  const banner = document.getElementById('result-banner');
+  if(done){
+    banner.className='result-banner result-pass';
+    banner.innerHTML='🎉 계곡 힐링 확정! 7/3(금) 시원한 계곡에서 만나요 🌲';
+  }else{
+    const needC = r1(Math.max(0,GOAL_CONV-conv));
+    const needN = Math.max(0,GOAL_NEW-newV), needCo = Math.max(0,GOAL_CODI-codiV);
+    banner.className='result-banner result-wait';
+    banner.innerHTML=`목표까지 — 환산 <b>${needC}건</b> 더 &nbsp;또는&nbsp; 신규 <b>${needN}건</b>+코디 <b>${needCo}명</b> 더 🚩`;
+  }
+
+  renderPerson();
+  saveData();
+}
+
+function setBar(id, ratio, met){
+  const el=document.getElementById(id);
+  el.style.width = Math.min(100, Math.max(0, ratio*100))+'%';
+  el.classList.toggle('met', met);
+}
+
+function renderPerson(){
+  const target = r1(GOAL_CONV / Math.max(1,state.people.length));
+  document.getElementById('percap-note').textContent = `(1인 권장 ${target}건)`;
+  document.getElementById('progress-section').innerHTML = state.people.map(p=>{
+    const total = getTotal(p.vals);
+    const pct = Math.min(100, Math.round(total/target*100));
+    const cls = total>=target ? 'bar-pass' : (total>=target*0.6 ? 'bar-almost':'bar-fail');
+    return `<div class="person-progress">
+      <div class="progress-header">
+        <span class="progress-name">${escapeHtml(p.name)}</span>
+        <span class="progress-count">${total}건</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar ${cls}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ===== Input handlers ===== */
+function handleChange(input){
+  const pi=+input.dataset.pi, ci=+input.dataset.ci;
+  const num=parseFloat(input.value.trim());
+  state.people[pi].vals[ci] = isNaN(num)?'':String(num);
+  input.value = state.people[pi].vals[ci];
+  refreshRowTotal(pi);
+  refreshAll();
+}
+function handleKey(e){
+  if(e.key==='Enter'||e.key==='Tab'){
+    e.preventDefault();
+    const inputs=Array.from(document.querySelectorAll('.cell-input'));
+    const idx=inputs.indexOf(e.target);
+    const next = e.key==='Tab'
+      ? (e.shiftKey?inputs[idx-1]:inputs[idx+1])
+      : (inputs[idx+COL_COUNT]||inputs[idx+1]);
+    if(next){ next.focus(); next.select(); }
+  }
+}
+function setExtra(key,val){
+  const num=parseFloat(String(val).trim());
+  state[key]= isNaN(num)?'':String(num);
+  refreshAll();
+}
+
+function addPerson(){
+  const inp=document.getElementById('new-name');
+  const name=inp.value.trim();
+  if(!name) return;
+  state.people.push({name, vals:Array(COL_COUNT).fill('')});
+  inp.value='';
+  render();
+}
+function delPerson(pi){
+  if(!confirm(state.people[pi].name+' 님을 삭제할까요?')) return;
+  state.people.splice(pi,1);
+  render();
+}
+function resetAll(){
+  if(!confirm('모든 실적을 초기화할까요?')) return;
+  state={ people: DEFAULT_PEOPLE.map(p=>({name:p.name, vals:[...p.vals]})), newRental:'', codi:'' };
+  render();
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+render();
+</script>
+</body>
+</html>
