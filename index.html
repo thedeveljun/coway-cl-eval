@@ -65,6 +65,11 @@ main{max-width:640px;margin:0 auto;padding:14px 14px 0}
 .fld.wide{grid-column:1/-1}
 .grid.g3{grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:6px;border:1px solid var(--edge);border-radius:10px;padding:8px 8px 10px;background:var(--card)}
 .grid.g3 .fl{text-align:center}
+.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:8px 6px 10px}
+.grid.g4 .inp{padding:0 4px}
+.grid.g4 .inp em{display:none}
+.grid.g4 .inp input{text-align:center}
+.grid.g3 .fld+.fld{border-left:1px solid var(--line);padding-left:5px}
 .fl{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;word-break:keep-all;white-space:pre-line}
 .inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:7px;background:var(--bg);padding:0 8px;transition:border-color .15s}
 .inp:focus-within{border-color:var(--accent);background:var(--card)}
@@ -213,7 +218,7 @@ const ITEMS = [
  {id:'nrRate',cat:'신규렌탈',name:'신규렌탈 생산율',baseMax:24,bonusMax:0,method:'상대평가',rel:true,rankKey:'rkNrRate',
   formula:'(순주문 − 14일 반환) ÷ 렌탈관리계정 × 100',rule:'배점 × (전체조직수 − 순위) ÷ (전체조직수 − 1)'},
  {id:'nrImpr',cat:'신규렌탈',name:'신규렌탈 생산율 개선율',baseMax:6,bonusMax:3,method:'절대평가',
-  formula:'당월 생산율 ÷ 직전3개월 평균 생산율 × 100',
+  formula:'당월 생산율 ÷ 직전3개월 평균 생산율 × 100 · 아래 입력값 단위는 %',
   rule:'기본: 150% 이상 6점 · 70~150% 미만 4점×개선율 · 70% 미만 1점<br>高생산율 가점(당월 생산율): 1.500↑ 3 · 1.450↑ 2.5 · 1.400↑ 2 · 1.350↑ 1.5 · 1.300↑ 1<br>직전3개월 중 실적 있는 달만 평균, 모두 0이면 상위조직 개선율 적용'},
  {id:'lumpsum',cat:'신규렌탈',name:'일시불 매출금액',baseMax:0,bonusMax:2,method:'절대평가',
   formula:'지국팀은 소속 지국 점수 적용 (순주문 금액 − 14일 내 반환, 안마의자만)',
@@ -509,8 +514,8 @@ const FIELDS = {
   nrReturns:{label:'14일 이내\n반환',unit:'건'},
   rkNrCount:{label:'건수\n순위',unit:'위'},
   rkNrRate:{label:'생산율 순위',unit:'위'},
-  nrP1:{label:'직전 1개월 생산율',unit:'%'},nrP2:{label:'직전 2개월 생산율',unit:'%'},nrP3:{label:'직전 3개월 생산율',unit:'%'},
-  nrUpperImpr:{label:'상위조직 개선율',unit:'%',hint:'직전3개월 실적이 모두 0일 때만'},
+  nrP1:{label:'직전\n1개월',unit:'%'},nrP2:{label:'직전\n2개월',unit:'%'},nrP3:{label:'직전\n3개월',unit:'%'},
+  nrUpperImpr:{label:'상위조직\n개선율',unit:'%'},
   lumpsum:{label:'소속 지국 일시불 매출',unit:'만원',hint:'지국팀은 지국 점수 적용'},
   rkRrOther:{label:'소유권 외 재렌탈 순위',unit:'위'},
   apIn:{label:'청정기 재렌탈 유입',unit:'건',hint:'재접수 제외'},
@@ -551,7 +556,7 @@ const FIELDS = {
   dedClaim:{label:'고객관리(클레임) 감점',unit:'점'}
 };
 
-const APP_VER = '버전 2.8 (10/11 19:57)';
+const APP_VER = '버전 2.9 (10/11 19:59)';
 const NAV_ICONS = {"base": "<svg viewBox=\"0 0 24 24\"><path d=\"M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z\"/></svg>", "nr": "<svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"4.5\"/><path d=\"M12 8.5v7M8.5 12h7\"/></svg>", "rr": "<svg viewBox=\"0 0 24 24\"><path d=\"M19.5 9A7.5 7.5 0 0 0 6 6.6L4.5 8\"/><path d=\"M4.5 4v4h4\"/><path d=\"M4.5 15A7.5 7.5 0 0 0 18 17.4l1.5-1.4\"/><path d=\"M19.5 20v-4h-4\"/></svg>", "st": "<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><circle cx=\"12\" cy=\"12\" r=\"0.9\" fill=\"currentColor\"/></svg>", "mg": "<svg viewBox=\"0 0 24 24\"><rect x=\"5.5\" y=\"4.5\" width=\"13\" height=\"16\" rx=\"2.5\"/><path d=\"M9 4.5V3.5h6v1\"/><path d=\"m9 12.5 2 2 4-4\"/></svg>", "an": "<svg viewBox=\"0 0 24 24\"><path d=\"M5 19.5V13M10 19.5V9M15 19.5v-4.5M20 19.5V5\"/><path d=\"M3.5 19.5h17\"/></svg>"};
 const TABS = [
   {id:'base',title:'홈',ic:'●',cards:[
@@ -562,7 +567,7 @@ const TABS = [
   {id:'nr',title:'신규',cat:'신규렌탈',ic:'',cards:[
     {item:'nrCount',cols:3,fields:['nrOrders','rkNrCount','nrReturns'],linked:['orgN']},
     {item:'nrRate',fields:['rkNrRate'],linked:['accounts','orgN']},
-    {item:'nrImpr',fields:['nrP1','nrP2','nrP3','nrUpperImpr'],linked:['nrOrders','accounts']},
+    {item:'nrImpr',cols:4,fields:['nrP1','nrP2','nrP3','nrUpperImpr'],linked:['nrOrders','accounts']},
     {item:'lumpsum',fields:['lumpsum']}
   ]},
   {id:'rr',title:'재렌탈',cat:'재렌탈',ic:'',cards:[
@@ -622,7 +627,7 @@ function cardHTML(c){
       <span class="chip ghost">${m.method}</span></div></header>
     <p class="formula">${m.formula}</p>
     ${c.linked?`<p class="linked">${c.linked.map(k=>`<span data-link="${k}">${FIELDS[k].label} <b>-</b></span>`).join('')}</p>`:''}
-    ${c.fields.length?`<div class="grid${c.cols===3?' g3':''}">${c.fields.map(fieldHTML).join('')}</div>`:''}
+    ${c.fields.length?`<div class="grid${c.cols===3?' g3':c.cols===4?' g3 g4':''}">${c.fields.map(fieldHTML).join('')}</div>`:''}
     <div class="result wait" id="res-${m.id}"></div>
     <details><summary>배점 기준 보기</summary><p>${m.rule}</p></details>
   </section>`;
