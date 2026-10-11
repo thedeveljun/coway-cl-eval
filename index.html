@@ -1,436 +1,742 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>계곡 힐링 챌린지 트래커</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --navy: #1a3560; --navy-light: #2a4a80; --amber: #d4870f;
-      --leaf: #2d8a5e; --leaf-light: #3fae76;
-      --card: #ffffff; --text: #1a2535; --muted: #6b7a99;
-      --border: rgba(26,53,96,0.25); --green: #2d8a5e; --red: #c0392b;
-      --pass-bg: #e8f5ee; --fail-bg: #fdf0ee;
-      --radius-md: 8px; --radius-lg: 12px;
-    }
-    body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background: #f0f4f8; padding: 0.5rem; }
-    .app { max-width: 960px; margin: 0 auto; padding: 0 0 2rem; }
-
-    .header {
-      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
-      padding: 0.7rem 1rem; color: white;
-      border-radius: var(--radius-lg); margin-bottom: 0.5rem;
-    }
-    .header h1 { font-size: 15px; font-weight: 500; margin-top: 4px; color: white; }
-    .header .sub { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 3px; line-height: 1.5; }
-    .event-date {
-      display: inline-flex; align-items: center;
-      background: var(--leaf); color: white; font-size: 12px; font-weight: 500;
-      padding: 3px 12px; border-radius: 20px;
-    }
-
-    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 0.5rem; }
-    .metric-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius-md); padding: 6px 10px;
-    }
-    .metric-card .label { font-size: 10px; color: var(--muted); margin-bottom: 1px; }
-    .metric-card .value { font-size: 18px; font-weight: 500; }
-    .value.amber { color: var(--amber); }
-    .value.navy { color: var(--navy); }
-    .value.green { color: var(--green); }
-
-    .section-title {
-      font-size: 12px; font-weight: 500; color: var(--navy);
-      margin: 0 0 4px; border-left: 3px solid var(--amber); padding-left: 6px;
-    }
-
-    .table-wrap {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 0.5rem;
-    }
-    .table-scroll { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    thead { background: var(--navy); color: white; }
-    thead th { padding: 5px 3px; font-weight: 500; font-size: 10px; text-align: center; white-space: nowrap; }
-    thead th:first-child { text-align: left; padding-left: 8px; min-width: 56px; position: sticky; left: 0; background: var(--navy); z-index: 2; }
-    tbody tr { border-bottom: 1px solid var(--border); }
-    tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: #f5f8ff; }
-    td { padding: 2px 3px; text-align: center; color: var(--text); }
-    td:first-child { text-align: left; padding-left: 8px; font-weight: 500; font-size: 11px; white-space: nowrap; position: sticky; left: 0; background: var(--card); z-index: 1; }
-    tbody tr:hover td:first-child { background: #f5f8ff; }
-    .cell-input {
-      width: 34px; height: 24px; text-align: center;
-      border: 2px solid #a0b0cc; border-radius: 4px;
-      font-size: 12px; background: #f8faff; color: var(--text);
-      padding: 0; outline: none;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .cell-input:focus { border-color: var(--navy); background: #e8eeff; }
-    .cell-input:not(:placeholder-shown) { background: white; border-color: var(--navy-light); }
-    .total-cell { font-weight: 600; color: var(--navy); font-size: 13px; }
-    .weekend-col { background: rgba(26,53,96,0.04); }
-    .col-highlight { background: rgba(213,135,15,0.10); }
-
-    .add-row {
-      display: flex; gap: 6px; padding: 6px 10px;
-      border-top: 1px solid var(--border); background: #fafbff;
-    }
-    .add-row input[type=text] {
-      flex: 1; height: 28px; padding: 0 8px;
-      border: 2px solid #a0b0cc; border-radius: 6px;
-      font-size: 11px; color: var(--text); background: white; outline: none;
-    }
-    .add-row input[type=text]:focus { border-color: var(--navy); }
-    .btn-add { height: 28px; padding: 0 10px; background: var(--navy); color: white; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; }
-    .btn-add:hover { background: var(--navy-light); }
-    .btn-del { background: none; border: none; color: #c0392b; font-size: 14px; cursor: pointer; padding: 0 2px; line-height: 1; opacity: 0.5; }
-    .btn-del:hover { opacity: 1; }
-
-    /* ===== Goal status ===== */
-    .result-banner {
-      border-radius: var(--radius-lg); padding: 9px 12px; text-align: center;
-      font-size: 13px; font-weight: 600; margin-bottom: 0.5rem;
-    }
-    .result-pass { background: linear-gradient(135deg,#fbe7a8,#e8b94a); color: #7a5410; }
-    .result-wait { background: var(--pass-bg); color: var(--green); }
-
-    .goal-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius-md); padding: 8px 11px; margin-bottom: 0.4rem;
-    }
-    .goal-card.met { border-color: var(--amber); background: #fffaf0; }
-    .goal-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
-    .goal-label { font-size: 12px; font-weight: 600; color: var(--navy); }
-    .goal-label .way { display:inline-block; background:var(--amber); color:#fff; font-size:9px; padding:1px 6px; border-radius:8px; margin-right:5px; vertical-align:middle; }
-    .goal-num { font-size: 12px; color: var(--muted); }
-    .goal-num b { color: var(--navy); font-size: 15px; }
-    .goal-num.met b { color: var(--green); }
-    .bar-wrap { height: 7px; background: #e8ecf5; border-radius: 8px; overflow: hidden; }
-    .bar { height: 100%; border-radius: 8px; transition: width 0.3s; background: var(--navy-light); }
-    .bar.met { background: var(--amber); }
-    .or-text { text-align:center; font-size:11px; color:var(--muted); margin:3px 0; }
-
-    .sub-goal { display:flex; gap:8px; margin-top:6px; }
-    .sub-goal .sg { flex:1; }
-    .sg-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
-    .sg-label { font-size:11px; color:var(--text); }
-    .mini-input { width:42px; height:22px; text-align:center; border:2px solid #a0b0cc; border-radius:4px; font-size:12px; outline:none; color:var(--text); background:#f8faff; }
-    .mini-input:focus { border-color:var(--navy); background:#e8eeff; }
-    .sg-goal { font-size:10px; color:var(--muted); }
-
-    /* per person */
-    .person-progress { margin-bottom: 5px; }
-    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-    .progress-name { font-size: 12px; font-weight: 500; color: var(--text); }
-    .progress-count { font-size: 11px; color: var(--muted); }
-    .progress-bar-wrap { height: 6px; background: #e8ecf5; border-radius: 8px; overflow: hidden; }
-    .progress-bar { height: 100%; border-radius: 8px; transition: width 0.3s; }
-    .bar-pass { background: var(--green); }
-    .bar-almost { background: #f39c12; }
-    .bar-fail { background: #c0392b; }
-
-    .rule-box {
-      background: #fff8ea; border: 1px solid #f5d580;
-      border-radius: var(--radius-md); padding: 6px 10px;
-      margin-bottom: 0.5rem; font-size: 11px; color: #7a5700;
-      display: flex; gap: 8px; flex-wrap: wrap;
-    }
-    .rule-item { display: flex; align-items: center; gap: 5px; }
-    .rule-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
-    .footer-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 0.5rem; line-height:1.6; }
-    .reset-link { color: var(--muted); font-size: 11px; text-decoration: underline; cursor: pointer; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f6fd6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="경영평가">
+<title>CL 경영평가 계산기</title>
+<style>
+:root{
+  --bg:#f3f6fb;--card:#ffffff;--ink:#1b2533;--sub:#667487;--line:#e3e8f0;
+  --accent:#2f6fd6;--accent-soft:#e8f0fd;--good:#1f9d6b;--good-soft:#e5f6ee;
+  --warn:#c98100;--warn-soft:#fdf3e1;--bad:#d64545;--bad-soft:#fdeaea;
+  --bonus:#7a55d3;--bonus-soft:#f0ebfc;--hero:#1a4799;--shadow:0 1px 3px rgba(20,40,80,.06),0 4px 14px rgba(20,40,80,.05);
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0e131a;--card:#18202b;--ink:#e7edf5;--sub:#97a4b5;--line:#2a3542;
+  --accent:#6aa3ff;--accent-soft:#1c2b42;--good:#4cc995;--good-soft:#16302a;
+  --warn:#f0b04a;--warn-soft:#352a14;--bad:#ff7a7a;--bad-soft:#3a1d1f;
+  --bonus:#b79bff;--bonus-soft:#29203f;--hero:#163a7c;--shadow:none;}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Noto Sans KR",sans-serif;
+  font-size:15px;line-height:1.45;font-weight:300}
+b,strong,h1,h2,h3,th{font-weight:600}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+/* top score bar */
+.top{position:relative;z-index:20;background:var(--hero);color:#fff;
+  padding:calc(8px + env(safe-area-inset-top)) 16px 9px;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.top-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.top h1{margin:0;font-size:13px;line-height:1.2;font-weight:500;opacity:.85;letter-spacing:-.2px}
+.total{font-size:34px;font-weight:700;letter-spacing:-1px;line-height:1}
+.total small{font-size:14px;font-weight:500;opacity:.8;margin-left:2px}
+.split{text-align:right;font-size:12.5px;line-height:1.3;opacity:.95}
+.split b{font-weight:600}
+.miss-pill{display:inline-block;margin-top:3px;font-size:9.5px;background:rgba(255,255,255,.18);
+  padding:2px 8px;border-radius:99px}
+.catbar{display:flex;gap:5px;margin-top:6px;overflow-x:auto;scrollbar-width:none}
+.catbar::-webkit-scrollbar{display:none}
+.cat{flex:1 1 0;min-width:0;white-space:nowrap;background:rgba(255,255,255,.14);border-radius:10px;padding:3px 6px;font-size:9.5px;line-height:1.25;letter-spacing:-.3px;text-align:center}
+.cat b{display:block;line-height:1.2;font-size:12px;font-variant-numeric:tabular-nums}
+.cat b span{font-size:9.5px}
+/* layout */
+main{max-width:640px;margin:0 auto;padding:14px 14px 0}
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.card h2{margin:0 0 4px;font-size:17px}
+.card h3{margin:0;font-size:16px;letter-spacing:-.3px}
+.desc{margin:0 0 10px;color:var(--sub);font-size:13px}
+.item header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 8px}
+.item header h3{flex:1 1 auto}
+.item header .chips{flex:0 0 auto;margin-left:auto}
+.chips{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.chip{font-size:11px;padding:2px 7px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;font-weight:500}
+.chip.bonus{background:var(--bonus-soft);color:var(--bonus)}
+.chip.ghost{background:transparent;border:1px solid var(--line);color:var(--sub);font-weight:400}
+.formula{margin:6px 0 10px;font-size:12.5px;color:var(--sub);background:var(--bg);border-radius:8px;padding:7px 9px}
+.linked{margin:0 0 8px;font-size:12px;color:var(--sub)}
+.linked span{display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px}
+.fld{display:flex;flex-direction:column;gap:1px;min-width:0}
+.fld.wide{grid-column:1/-1}
+.fl{font-size:12px;font-weight:500;color:var(--ink);line-height:1.3}
+.inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:7px;background:var(--bg);padding:0 8px;transition:border-color .15s}
+.inp:focus-within{border-color:var(--accent);background:var(--card)}
+.inp input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font-size:13px;line-height:1.2;padding:3px 0;height:26px;outline:none;font-family:inherit;-webkit-appearance:none;appearance:none}
+.inp em{font-style:normal;color:var(--sub);font-size:12.5px;margin-left:4px;white-space:nowrap}
+.fld small{color:var(--sub);font-size:11px;line-height:1.25}
+.result{margin-top:12px;border-radius:12px;padding:11px 12px;background:var(--good-soft)}
+.result.wait{background:var(--bg);color:var(--sub);font-size:13px}
+.scores{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.sc b{font-size:24px;font-weight:700;color:var(--good);letter-spacing:-.5px}
+.sc span{color:var(--sub);font-size:13px;margin-left:3px}
+.sc.bonus b{color:var(--bonus)}
+.info{font-size:13px;margin-top:3px}
+#res-lead{padding:4px 10px;margin-top:8px}
+#res-lead .sc b{font-size:16px}
+#res-lead .sc span{font-size:11.5px}
+.note{font-size:12px;color:var(--warn);margin-top:3px}
+.next{margin-top:7px;font-size:12.5px;background:var(--card);border-radius:8px;padding:6px 9px;color:var(--ink)}
+.next b{color:var(--accent)}
+details{margin-top:9px;font-size:12.5px;color:var(--sub)}
+details summary{cursor:pointer;color:var(--accent);font-weight:500;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details p{margin:6px 0 0;line-height:1.6}
+/* score table */
+.tbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+.tbl th{background:var(--bg);color:var(--sub);font-weight:500;padding:6px 2px;font-size:10px;text-align:center}
+.tbl th.l{text-align:left;padding-left:8px}
+.tbl td{padding:6px 2px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl td:first-child{padding-left:8px}
+.tbl td small{display:block;color:var(--sub);font-size:9px;font-weight:400}
+.tbl td.n{text-align:center;white-space:nowrap;border-left:1px solid var(--line)}
+.tbl th:not(.l){border-left:1px solid var(--line)}
+.tbl col.c-n{width:34px}.tbl col.c-my{width:46px}
+.tbl tr.catrow td{background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:11px}
+.tbl tr.sub td{font-weight:600;background:var(--bg)}
+.tbl tr.tot td{font-weight:700;font-size:12.5px;border-bottom:0;border-top:2px solid var(--ink)}
+.tbl tr.it{cursor:pointer}
+.tbl tr.it:active td{background:var(--accent-soft)}
+.my b{color:var(--good);font-size:12px}
+.tbl tr.tot .my b{color:var(--accent);font-size:14px}
+.my .bn{display:block;color:var(--bonus);font-size:10px;font-weight:600}
+.my .na{color:var(--sub);font-size:9.5px}
+.my .dd{color:var(--bad);font-weight:600}
+/* analysis */
+.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);gap:10px;font-size:14px}
+.row:last-child{border-bottom:0}
+.row.cr{padding:3px 0;line-height:1.2;border-bottom:0}
+.row.cr b{font-weight:300}
+.row.cr .r{font-weight:300}
+.row.cr .bar{margin-top:2px;height:5px}
+.row.mr{font-size:13px;padding:4px 0;line-height:1.3}
+.row .r{text-align:right;white-space:nowrap}
+.bar{height:7px;background:var(--bg);border-radius:9px;overflow:hidden;margin-top:5px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:9px}
+.lv{padding:10px 0;border-bottom:1px solid var(--line)}
+.lv:last-child{border-bottom:0}
+.lv .t{font-weight:600;font-size:13px}
+.lv .d{font-size:11.5px;color:var(--sub);margin-top:2px}
+.lv .g{float:right;font-weight:700;font-size:14px;color:var(--good)}
+.rec .desc{font-size:12px}
+.rec .tag{font-size:10px}
+.rec .empty{font-size:12px}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;background:var(--warn-soft);color:var(--warn);font-weight:600;margin-right:4px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{flex:1;border:0;border-radius:12px;padding:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--accent-soft);color:var(--accent)}
+.btn.danger{background:var(--bad-soft);color:var(--bad)}
+.empty{color:var(--sub);font-size:13px;padding:6px 0}
+/* bottom nav */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--card);
+  background:color-mix(in srgb,var(--card) 90%,transparent);
+  -webkit-backdrop-filter:saturate(1.6) blur(16px);backdrop-filter:saturate(1.6) blur(16px);
+  border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(20,40,80,.06);
+  display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;min-width:0;border:0;background:transparent;color:var(--sub);font-family:inherit;font-size:10.5px;font-weight:500;
+  padding:2px 0;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:color .2s}
+nav .ic{width:44px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;transition:background-color .2s}
+nav .ic svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+nav .lb{line-height:1.15;white-space:nowrap;letter-spacing:-.2px}
+nav .pt{min-height:12px;line-height:12px;font-size:9.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--sub);opacity:.75}
+nav button.on{color:var(--accent)}
+nav button.on .ic{background:var(--accent-soft)}
+nav button.on .ic svg{stroke-width:2}
+nav button.on .lb{font-weight:700}
+nav button.on .pt{color:var(--accent);opacity:1}
+nav button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:12px}
+@media (prefers-reduced-motion:reduce){nav button,nav .ic{transition:none}}
+@media (max-width:360px){.grid{grid-template-columns:1fr}.total{font-size:30px}}
+@media print{.top,nav{position:static}.panel{display:block}nav,.btns{display:none}body{padding:0}}
+</style>
 </head>
 <body>
-<div class="app">
-  <div class="header">
-    <div class="event-date">🏕️ 계곡 힐링: 7/3(금) 예정</div>
-    <h1>서울남동총국 우수팀 "시원한 계곡에서 만나요!"</h1>
-    <div class="sub">기간: 5/28(목) ~ 6/12(금) &nbsp;|&nbsp; <b>팀 환산 60건</b> 또는 <b>신규렌탈 10건 + 코디 3명</b> 달성 시</div>
-  </div>
 
-  <div class="metrics">
-    <div class="metric-card"><div class="label">팀 환산</div><div class="value amber" id="m-conv">0</div></div>
-    <div class="metric-card"><div class="label">목표</div><div class="value navy">60건</div></div>
-    <div class="metric-card"><div class="label">달성률</div><div class="value green" id="m-pct">0%</div></div>
-    <div class="metric-card"><div class="label">D-day</div><div class="value navy" id="m-dday">-</div></div>
-  </div>
-
-  <div class="section-title">일별 환산 실적 입력</div>
-  <div class="table-wrap">
-    <div class="table-scroll">
-      <table>
-        <thead><tr id="thead-row"></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
+<div class="top">
+  <div class="top-row">
+    <div>
+      <h1 id="ttl">2026 CL 경영평가 · 지국팀</h1>
+      <div class="total" id="tTotal">0<small>점</small></div>
+      <span class="miss-pill" id="tMiss">미입력 항목 확인 중</span>
     </div>
-    <div class="add-row">
-      <input type="text" id="new-name" placeholder="이름 입력 후 추가" onkeydown="if(event.key==='Enter')addPerson()">
-      <button class="btn-add" onclick="addPerson()">+ 추가</button>
+    <div class="split">
+      기본 <b id="tBase">0</b> / 100<br>
+      가점 <b id="tBonus">+0</b> / 19.5<br>
+      감점 <b id="tDed">-0</b>
     </div>
   </div>
-
-  <div class="section-title">목표 달성 현황</div>
-  <div class="result-banner result-wait" id="result-banner">목표를 향해 출발! 🚩</div>
-
-  <!-- Path 1 -->
-  <div class="goal-card" id="goal1">
-    <div class="goal-row">
-      <span class="goal-label"><span class="way">경로①</span>팀 환산</span>
-      <span class="goal-num" id="g1-num"><b>0</b> / 60건</span>
-    </div>
-    <div class="bar-wrap"><div class="bar" id="g1-bar" style="width:0%"></div></div>
-  </div>
-
-  <div class="or-text">— 또는 —</div>
-
-  <!-- Path 2 -->
-  <div class="goal-card" id="goal2">
-    <div class="goal-row">
-      <span class="goal-label"><span class="way">경로②</span>신규렌탈 + 코디 배출</span>
-    </div>
-    <div class="sub-goal">
-      <div class="sg">
-        <div class="sg-head">
-          <span class="sg-label">신규렌탈</span>
-          <input class="mini-input" type="text" inputmode="numeric" id="in-new" placeholder="0" onchange="setExtra('newRental',this.value)">
-        </div>
-        <div class="bar-wrap"><div class="bar" id="g2n-bar" style="width:0%"></div></div>
-        <div class="sg-goal">목표 10건</div>
-      </div>
-      <div class="sg">
-        <div class="sg-head">
-          <span class="sg-label">코디 배출</span>
-          <input class="mini-input" type="text" inputmode="numeric" id="in-codi" placeholder="0" onchange="setExtra('codi',this.value)">
-        </div>
-        <div class="bar-wrap"><div class="bar" id="g2c-bar" style="width:0%"></div></div>
-        <div class="sg-goal">목표 3명</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section-title" style="margin-top:0.6rem">팀원별 기여도 <span style="color:var(--muted);font-weight:400" id="percap-note"></span></div>
-  <div class="progress-section" id="progress-section"></div>
-
-  <div class="rule-box">
-    <div class="rule-item"><div class="rule-dot"></div>침대 · 테라솔 U.P · 에어컨 · 안마의자 · 음식물처리기: <b style="margin-left:3px">1.5건</b> 인정</div>
-    <div class="rule-item"><div class="rule-dot"></div>그 외 신규렌탈: <b style="margin-left:3px">1건</b></div>
-    <div class="rule-item"><div class="rule-dot"></div>음식물처리기는 <b style="margin-left:3px">27(화) 입력분부터</b> 인정</div>
-  </div>
-
-  <div class="footer-note">
-    셀에 <b>환산 건수</b>를 직접 입력하세요 (예: 1, 2, 1.5) — Enter: 아래로 / Tab: 옆으로 이동<br>
-    입력값은 자동 저장됩니다 · <span class="reset-link" onclick="resetAll()">전체 초기화</span>
-  </div>
+  <div class="catbar" id="catbar"></div>
 </div>
 
+<main id="main"></main>
+<nav id="nav"></nav>
+
 <script>
-const GOAL_CONV = 60, GOAL_NEW = 10, GOAL_CODI = 3;
-const STORAGE_KEY = 'valley_tracker_v1';
+/*CALC_START*/
+const EPS = 1e-9;
+function vv(s,k){const x=s[k];if(x===null||x===undefined||x==='')return null;const n=Number(x);return isNaN(n)?null:n;}
+function zz(s,k){const x=vv(s,k);return x===null?0:x;}
+function geTable(x,t,fb){for(const [th,sc] of t){if(x>=th-EPS)return sc;}return fb;}
+function ltTable(x,t,fb){for(const [th,sc] of t){if(x<th-EPS)return sc;}return fb;}
+function avgPrev(a){const b=a.filter(x=>x!==null&&x>0);return b.length?b.reduce((p,c)=>p+c,0)/b.length:null;}
+function clamp(x,a,b){return Math.min(Math.max(x,a),b);}
+function rel(max,rank,N){if(rank===null||N===null)return null;if(N<=1)return max;const r=clamp(rank,1,N);return max*(N-r)/(N-1);}
+function f2(x){if(x===null||x===undefined||isNaN(x))return '-';return (Math.round(x*100)/100).toLocaleString('ko-KR',{maximumFractionDigits:2});}
+function f3(x){if(x===null||x===undefined||isNaN(x))return '-';return (Math.round(x*1000)/1000).toLocaleString('ko-KR',{maximumFractionDigits:3});}
 
-// 5/28(목) ~ 6/12(금)
-const DATES = [
-  {d:'5/28',w:'목'},{d:'5/29',w:'금'},{d:'5/30',w:'토'},{d:'5/31',w:'일'},
-  {d:'6/1',w:'월'},{d:'6/2',w:'화'},{d:'6/3',w:'수'},{d:'6/4',w:'목'},{d:'6/5',w:'금'},
-  {d:'6/6',w:'토'},{d:'6/7',w:'일'},{d:'6/8',w:'월'},{d:'6/9',w:'화'},
-  {d:'6/10',w:'수'},{d:'6/11',w:'목'},{d:'6/12',w:'금'}
+const T = {
+  nrHigh:[[1.5,3],[1.45,2.5],[1.4,2],[1.35,1.5],[1.3,1]],
+  lump:[[500,2],[450,1.8],[400,1.6],[350,1.4],[300,1.2],[250,1.0],[200,0.8],[150,0.6],[100,0.4],[50,0.2]],
+  ap:[[65,3],[60,2.5],[55,1.5],[45,1],[35,0.5]],
+  ow:[[68,12],[67,11],[66,10],[65,9],[64,8],[63,7],[61,6],[59,5],[57,4],[55,3],[53,2],[51,1.5],[49,1],[47,0.5]],
+  owHigh:[[74,3],[72,2],[70,1]],
+  owImpr:[[120,4],[110,3.5],[105,3],[100,2.5],[90,2],[70,1.5]],
+  fl:[[80,3],[75,2],[70,1.5],[65,1]],
+  gr:[[45,7],[40,6.5],[35,6],[30,5.5],[25,5],[20,4.5],[15,4],[10,3.5],[5,3],[0,2.5],[-5,2],[-10,1.5],[-15,1]],
+  grHigh:[[0.8,3.5],[0.75,3],[0.7,2.5],[0.65,2],[0.6,1.5]],
+  sm:[[55,4],[52,3.5],[50,3],[48,2.5],[46,2.1],[44,1.9],[42,1.6],[40,1.3],[35,1.0],[30,0.8],[25,0.6],[20,0.4],[15,0.2]],
+  pc:[[70,2],[65,1.5],[60,1],[55,0.5]],
+  cancel:[[0.15,5],[0.17,4.5],[0.19,4],[0.21,3.5],[0.23,3],[0.25,2.5],[0.27,2],[0.29,1.5],[0.31,1],[0.33,0.5]],
+  net:[[45,5],[40,4.5],[35,4],[30,3.5],[25,3],[20,2.5],[15,2],[10,1.5],[5,1],[0,0.5]],
+  mb:[[55,5],[50,4.5],[45,4],[40,3.5],[35,3],[30,2.5],[25,2],[20,1.5],[15,1],[10,0.5]]
+};
+
+const ITEMS = [
+ {id:'nrCount',cat:'신규렌탈',name:'신규렌탈 건수',baseMax:10,bonusMax:0,method:'상대평가',rel:true,rankKey:'rkNrCount',
+  formula:'당월 신규렌탈 순주문 − 14일 이내 반환',rule:'배점 × (전체조직수 − 순위) ÷ (전체조직수 − 1). 리버스 시너지 제외.'},
+ {id:'nrRate',cat:'신규렌탈',name:'신규렌탈 생산율',baseMax:24,bonusMax:0,method:'상대평가',rel:true,rankKey:'rkNrRate',
+  formula:'(순주문 − 14일 반환) ÷ 렌탈관리계정 × 100',rule:'배점 × (전체조직수 − 순위) ÷ (전체조직수 − 1)'},
+ {id:'nrImpr',cat:'신규렌탈',name:'신규렌탈 생산율 개선율',baseMax:6,bonusMax:3,method:'절대평가',
+  formula:'당월 생산율 ÷ 직전3개월 평균 생산율 × 100',
+  rule:'기본: 150% 이상 6점 · 70~150% 미만 4점×개선율 · 70% 미만 1점<br>高생산율 가점(당월 생산율): 1.500↑ 3 · 1.450↑ 2.5 · 1.400↑ 2 · 1.350↑ 1.5 · 1.300↑ 1<br>직전3개월 중 실적 있는 달만 평균, 모두 0이면 상위조직 개선율 적용'},
+ {id:'lumpsum',cat:'신규렌탈',name:'일시불 매출금액',baseMax:0,bonusMax:2,method:'절대평가',
+  formula:'지국팀은 소속 지국 점수 적용 (순주문 금액 − 14일 내 반환, 안마의자만)',
+  rule:'500만↑ 2.0 · 450만↑ 1.8 · 400만↑ 1.6 · 350만↑ 1.4 · 300만↑ 1.2 · 250만↑ 1.0 · 200만↑ 0.8 · 150만↑ 0.6 · 100만↑ 0.4 · 50만↑ 0.2 · 50만 미만 0.1 · 0원 이하 0'},
+ {id:'rrOther',cat:'재렌탈',name:'소유권 외 재렌탈 건수',baseMax:3,bonusMax:0,method:'상대평가',rel:true,rankKey:'rkRrOther',
+  formula:'당월 소유권 외 재렌탈 순주문 − 14일 이내 반환',rule:'배점 × (전체조직수 − 순위) ÷ (전체조직수 − 1)'},
+ {id:'apRate',cat:'재렌탈',name:'청정기 소유권 재렌탈 유입률',baseMax:3,bonusMax:0,method:'절대평가',
+  formula:'청정기 소유권 재렌탈 유입 ÷ 청정기 소유권 도래(자가관리 제외) × 100',
+  rule:'65%↑ 3 · 60%↑ 2.5 · 55%↑ 1.5 · 45%↑ 1 · 35%↑ 0.5 · 35% 미만 0<br>도래 3건 미만이면 상위조직 유입률 적용'},
+ {id:'owRate',cat:'재렌탈',name:'소유권 재렌탈 유입률',baseMax:12,bonusMax:3,method:'절대평가',
+  formula:'소유권 재렌탈 유입 ÷ 소유권 도래(자가관리·전기레인지 제외) × 100',
+  rule:'68%↑ 12 · 67↑ 11 · 66↑ 10 · 65↑ 9 · 64↑ 8 · 63↑ 7 · 61↑ 6 · 59↑ 5 · 57↑ 4 · 55↑ 3 · 53↑ 2 · 51↑ 1.5 · 49↑ 1 · 47↑ 0.5 · 47% 미만 0<br>고유입률 가점: 70%↑ +1 · 72%↑ +2 · 74%↑ +3'},
+ {id:'owImpr',cat:'재렌탈',name:'소유권 재렌탈 유입률 개선율',baseMax:4,bonusMax:0,method:'절대평가',
+  formula:'당월 유입률 ÷ 직전3개월 평균 유입률 × 100',
+  rule:'120%↑ 4 · 110↑ 3.5 · 105↑ 3 · 100↑ 2.5 · 90↑ 2 · 70↑ 1.5 · 70% 미만 1'},
+ {id:'stCount',cat:'전략',name:'전략제품 판매건수',baseMax:4,bonusMax:0,method:'상대평가',rel:true,rankKey:'rkSt',
+  formula:'전략제품 순주문 − 14일 반환 (렌탈만, 환산건수)',
+  rule:'배점 × (전체조직수 − 순위) ÷ (전체조직수 − 1) · 판매 0건 이하 0점<br>환산(신규/재렌탈): 의료기기·음식물처리기·웨어러블(단기) 1.0/0.5 · 침대·스마트매트리스·안마의자·BEREX R/M 1.5/0.5 · 에어컨·웨어러블(5년)·BEREX 의료기기 2.0/0.5'},
+ {id:'fl',cat:'전략',name:'금융리스 판매 비중',baseMax:3,bonusMax:0,method:'절대평가',
+  formula:'금융리스 환산 ÷ 렌탈 순주문 × 100',
+  rule:'80%↑ 3 · 75↑ 2 · 70↑ 1.5 · 65↑ 1 · 65% 미만 0<br>환경가전 3년 0건 · 5년 0.7건 · 6년↑ 1건 / 환경가전 외 5년↑ 1건'},
+ {id:'gr',cat:'전략',name:'정수기·청정기·비데 신규렌탈 성장률',baseMax:7,bonusMax:3.5,method:'절대평가',
+  formula:'(당월 − 직전3개월 평균) ÷ 직전3개월 평균 × 100 · 항목 최대 7점',
+  rule:'45%↑ 7 · 40↑ 6.5 · 35↑ 6 · 30↑ 5.5 · 25↑ 5 · 20↑ 4.5 · 15↑ 4 · 10↑ 3.5 · 5↑ 3 · 0↑ 2.5 · −5↑ 2 · −10↑ 1.5 · −15↑ 1 · −15% 미만 0<br>高생산율 가점(정청비 ÷ 관리계정 × 100): 0.80↑ 3.5 · 0.75↑ 3 · 0.70↑ 2.5 · 0.65↑ 2 · 0.60↑ 1.5<br>직전3개월 평균은 반올림 정수 · 판매 0건 이하 0점'},
+ {id:'smRate',cat:'전략',name:'자가관리 소유권 재렌탈 유입률',baseMax:4,bonusMax:2,method:'절대평가',
+  formula:'유입률 = 자가관리 재렌탈 유입(전기레인지 포함) ÷ 자가관리 도래(전기레인지 제외) × 100 · 가점 = 유입건 × 0.2점',
+  rule:'기본(유입률): 55%↑ 4 · 52↑ 3.5 · 50↑ 3 · 48↑ 2.5 · 46↑ 2.1 · 44↑ 1.9 · 42↑ 1.6 · 40↑ 1.3 · 35↑ 1.0 · 30↑ 0.8 · 25↑ 0.6 · 20↑ 0.4 · 15↑ 0.2 · 15% 미만 0<br>가점(유입건): 지국팀 1건당 0.2점, 최대 2점 (지국은 0.1점)<br>지국팀 자가관리 도래 5건 미만이면 소속 지국 유입률 적용'},
+ {id:'pc',cat:'전략',name:'사전계약/사전청약 소유권 재렌탈 유입률',baseMax:0,bonusMax:2,method:'절대평가',
+  formula:'(사전계약·청약 재렌탈 + 그중 자가관리 × 1.5) ÷ 소유권 도래(전체) × 100',
+  rule:'70%↑ 2 · 65↑ 1.5 · 60↑ 1 · 55↑ 0.5 · 55% 미만 0 · 자가관리 재렌탈 1건 → 1.5건 반영'},
+ {id:'cancel',cat:'관리',name:'렌탈해약률',baseMax:5,bonusMax:0,method:'절대평가',
+  formula:'렌탈관리 반환 ÷ 렌탈관리계정 × 100',
+  rule:'0.15% 미만 5 · 0.17 미만 4.5 · 0.19 미만 4 · 0.21 미만 3.5 · 0.23 미만 3 · 0.25 미만 2.5 · 0.27 미만 2 · 0.29 미만 1.5 · 0.31 미만 1 · 0.33 미만 0.5 · 0.33% 이상 0'},
+ {id:'net',cat:'관리',name:'렌탈계정순증',baseMax:5,bonusMax:0,method:'절대평가',
+  formula:'렌탈 순주문 + 자가관리 재렌탈 × 0.5 − 렌탈관리 반환 − 소유권 도래(전체)',
+  rule:'지국팀: 45건↑ 5 · 40↑ 4.5 · 35↑ 4 · 30↑ 3.5 · 25↑ 3 · 20↑ 2.5 · 15↑ 2 · 10↑ 1.5 · 5↑ 1 · 0↑ 0.5 · 0건 미만 0<br>자가관리 재렌탈 1건 → 1.5건 반영'},
+ {id:'mb',cat:'관리',name:'멤버십 유입률',baseMax:5,bonusMax:0,method:'절대평가',
+  formula:'(도래 멤버십 × 1 + 도래 외 × 0.5 − 직전1개월 가입 후 탈퇴) ÷ (도래(전기레인지 제외) − 소유권 재렌탈) × 100',
+  rule:'55%↑ 5 · 50↑ 4.5 · 45↑ 4 · 40↑ 3.5 · 35↑ 3 · 30↑ 2.5 · 25↑ 2 · 20↑ 1.5 · 15↑ 1 · 10↑ 0.5 · 10% 미만 0'},
+ {id:'org',cat:'조직',name:'인당평균계정 & 모집',baseMax:5,bonusMax:1,method:'직접입력',
+  formula:'세부 산정 기준 페이지가 자료에 없어 본사 산정 점수를 직접 입력',rule:'배점 5 + 가점 1'},
+ {id:'lead',cat:'조직',name:'팀장임용',baseMax:0,bonusMax:3,method:'직접입력',optional:true,
+  formula:'해당 시 가점 직접 입력',rule:'가점 최대 3'}
 ];
-const COL_COUNT = DATES.length;
-const WEEKEND_IDX = [2,3,9,10];     // 토/일
-const HIGHLIGHT_IDX = [COL_COUNT-1]; // 마감일 6/12
+const META = Object.fromEntries(ITEMS.map(m=>[m.id,m]));
+const CATS = [
+  {k:'신규렌탈',base:40,bonus:5},{k:'재렌탈',base:22,bonus:3},{k:'전략',base:18,bonus:7.5},
+  {k:'관리',base:15,bonus:0},{k:'조직',base:5,bonus:4}
+];
 
-const DEFAULT_PEOPLE = ['우영미','박행신','김태호','전숙경','박일녀','강승임','임병순','이은이']
-  .map(n => ({ name:n, vals:Array(COL_COUNT).fill('') }));
+function compute(s){
+  const g=k=>vv(s,k), z=k=>zz(s,k);
+  const N=g('orgN'), acc=g('accounts');
+  const I={};
+  const put=(id,o)=>{I[id]=Object.assign({base:null,bonus:null,info:'',note:''},o);};
 
-let state = loadData();
+  // 신규렌탈
+  const nrO=g('nrOrders'); const nrNet=nrO===null?null:nrO-z('nrReturns');
+  const nrRate=(nrNet!==null&&acc)?nrNet/acc*100:null;
+  put('nrCount',{base:rel(10,g('rkNrCount'),N),bonus:0,info:nrNet!==null?`순실적 ${f2(nrNet)}건`:''});
+  put('nrRate',{base:rel(24,g('rkNrRate'),N),bonus:0,info:nrRate!==null?`생산율 ${f3(nrRate)}%`:''});
+  { let impr=null,note='';
+    if(nrRate!==null){const avg=avgPrev([g('nrP1'),g('nrP2'),g('nrP3')]);
+      if(avg!==null){impr=nrRate/avg*100;note='';}
+      else{impr=g('nrUpperImpr');note='직전3개월 실적 없음 → 상위조직 개선율 적용';}}
+    const base=impr===null?null:(impr>=150-EPS?6:impr>=70-EPS?4*impr/100:1);
+    const bonus=nrRate===null?null:geTable(nrRate,T.nrHigh,0);
+    put('nrImpr',{base,bonus,info:impr!==null?`개선율 ${f2(impr)}% · 당월 생산율 ${f3(nrRate)}%`:'',note});}
+  { const a=g('lumpsum'); let b=null;
+    if(a!==null){b=a<=0?0:(a<50-EPS?0.1:geTable(a,T.lump,0.1));}
+    put('lumpsum',{base:0,bonus:b,info:a!==null?`지국 일시불 ${f2(a)}만원`:''});}
 
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const s = JSON.parse(raw);
-      // 길이 보정
-      s.people.forEach(p => {
-        if (!Array.isArray(p.vals)) p.vals = Array(COL_COUNT).fill('');
-        while (p.vals.length < COL_COUNT) p.vals.push('');
-        p.vals.length = COL_COUNT;
-      });
-      if (typeof s.newRental === 'undefined') s.newRental = '';
-      if (typeof s.codi === 'undefined') s.codi = '';
-      return s;
+  // 재렌탈
+  put('rrOther',{base:rel(3,g('rkRrOther'),N),bonus:0});
+  { const i=g('apIn'),d=g('apDue'); let r=null,note='';
+    if(i!==null&&d!==null){ if(d<3){r=g('apUpper');note='도래 3건 미만 → 상위조직 유입률 적용';} else r=i/d*100; }
+    put('apRate',{base:r===null?null:geTable(r,T.ap,0),bonus:0,info:r!==null?`유입률 ${f2(r)}%`:'',note});}
+  const owIn=g('owIn'),owDue=g('owDue');
+  const owR=(owIn!==null&&owDue)?owIn/owDue*100:null;
+  put('owRate',{base:owR===null?null:geTable(owR,T.ow,0),bonus:owR===null?null:geTable(owR,T.owHigh,0),
+    info:owR!==null?`유입률 ${f2(owR)}%`:''});
+  { let impr=null,note='';
+    if(owR!==null){const avg=avgPrev([g('owP1'),g('owP2'),g('owP3')]);
+      if(avg!==null)impr=owR/avg*100; else{impr=g('owUpperImpr');note='직전3개월 실적 없음 → 상위조직 개선율 적용';}}
+    put('owImpr',{base:impr===null?null:geTable(impr,T.owImpr,1),bonus:0,info:impr!==null?`개선율 ${f2(impr)}%`:'',note});}
+
+  // 전략
+  { const keys=['stN1','stR1','stN15','stR15','stN2','stR2'];
+    const any=keys.some(k=>g(k)!==null);
+    const conv=z('stN1')*1+z('stN15')*1.5+z('stN2')*2+(z('stR1')+z('stR15')+z('stR2'))*0.5;
+    let base=rel(4,g('rkSt'),N),note='';
+    if(any&&conv<=0){base=0;note='판매 0건 이하 → 0점';}
+    put('stCount',{base,bonus:0,info:any?`환산 판매 ${f2(conv)}건`:'',note});}
+  { const tot=g('rentalOrders'); const any=['flEnv5','flEnv6','flOther'].some(k=>g(k)!==null);
+    let r=null,conv=null;
+    if(tot&&any){conv=z('flEnv5')*0.7+z('flEnv6')+z('flOther');r=conv/tot*100;}
+    put('fl',{base:r===null?null:geTable(r,T.fl,0),bonus:0,info:r!==null?`금융리스 환산 ${f2(conv)}건 · 비중 ${f2(r)}%`:''});}
+  { const cur=g('grCur'); let base=null,bonus=null,info='',note='';
+    if(cur!==null){
+      if(cur<=0){base=0;bonus=0;note='판매 0건 이하 → 0점';}
+      else{
+        const raw=avgPrev([g('grP1'),g('grP2'),g('grP3')]);
+        const avg=raw===null?null:Math.round(raw);
+        let gr=null;
+        if(avg)gr=(cur-avg)/avg*100; else{gr=g('grUpper');note='직전3개월 실적 없음 → 상위조직 성장률 적용';}
+        if(gr!==null){
+          base=geTable(gr,T.gr,0);
+          const hp=acc?cur/acc*100:null;
+          const hb=hp===null?0:geTable(hp,T.grHigh,0);
+          bonus=Math.max(0,Math.min(hb,7-base));
+          if(hb>bonus+EPS)note=(note?note+' · ':'')+`高생산율 가점 ${f2(hb)}점 중 ${f2(bonus)}점만 반영(항목 최대 7점)`;
+          info=`성장률 ${f2(gr)}%`+(avg?` (직전 평균 ${avg}건)`:'')+(hp!==null?` · 高생산율 ${f3(hp)}%`:'');
+        }
+      }
     }
-  } catch(e) {}
-  return { people: DEFAULT_PEOPLE.map(p=>({name:p.name, vals:[...p.vals]})), newRental:'', codi:'' };
-}
-function saveData(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+    put('gr',{base,bonus,info,note});}
+  { const i=g('smIn'),d=g('smDue'); let r=null,note='';
+    if(i!==null&&d!==null){ if(d<5){r=g('smJiguk');note='도래 5건 미만 → 소속 지국 유입률 적용';} else r=i/d*100; }
+    const sb=i===null?null:Math.min(2,Math.max(0,i)*0.2);
+    put('smRate',{base:r===null?null:geTable(r,T.sm,0),bonus:sb,
+      info:(r!==null?`유입률 ${f2(r)}%`:'')+(i!==null?` · 유입 ${f2(i)}건 × 0.2점 = 가점 ${f2(sb)}`:''),note});}
+  { const d=g('dueAll'); const any=g('pcGeneral')!==null||g('pcSelf')!==null; let r=null;
+    if(d&&any)r=(z('pcGeneral')+z('pcSelf')*1.5)/d*100;
+    put('pc',{base:0,bonus:r===null?null:geTable(r,T.pc,0),info:r!==null?`유입률 ${f2(r)}%`:''});}
 
-function r1(n){ return Math.round(n*10)/10; }
-function getTotal(vals){ return r1(vals.reduce((a,b)=>a+(parseFloat(b)||0),0)); }
-function teamConv(){ return r1(state.people.reduce((a,p)=>a+getTotal(p.vals),0)); }
+  // 관리
+  { const ret=g('rentReturns'); let r=null;
+    if(ret!==null&&acc)r=ret/acc*100;
+    put('cancel',{base:r===null?null:ltTable(r,T.cancel,0),bonus:0,info:r!==null?`해약률 ${f3(r)}%`:''});}
+  { const ro=g('rentalOrders'),d=g('dueAll'); let n=null;
+    if(ro!==null&&d!==null)n=ro+z('smIn')*0.5-z('rentReturns')-d;
+    put('net',{base:n===null?null:geTable(n,T.net,0),bonus:0,info:n!==null?`순증 ${f2(n)}건`:''});}
+  { const d=g('mbDue'); const any=g('mbMem')!==null||g('mbOther')!==null; let r=null;
+    if(d!==null&&any){const den=d-z('mbRerental');const num=z('mbMem')+z('mbOther')*0.5-z('mbQuit');r=den>0?num/den*100:null;}
+    put('mb',{base:r===null?null:geTable(r,T.mb,0),bonus:0,info:r!==null?`유입률 ${f2(r)}%`:''});}
 
-function ddayText(){
-  const end = new Date(2026,5,12,23,59,59);
-  const diff = Math.ceil((end - new Date())/(864e5));
-  if (diff>0) return 'D-'+diff;
-  if (diff===0) return 'D-DAY';
-  return '마감';
-}
+  // 조직
+  { const b=g('orgBase'); put('org',{base:b===null?null:clamp(b,0,5),bonus:clamp(z('orgBonus'),0,1)});}
+  put('lead',{base:0,bonus:clamp(z('leadBonus'),0,3)});
+  const ded=Math.abs(z('dedHeart'))+Math.abs(z('ded5200'))+Math.abs(z('dedClaim'));
 
-/* ===== Header thead ===== */
-function buildHead(){
-  let html = '<th>이름</th>';
-  DATES.forEach((dt,i)=>{
-    const cls = WEEKEND_IDX.includes(i) ? ' class="weekend-col"' : (HIGHLIGHT_IDX.includes(i)?' class="col-highlight"':'');
-    html += `<th${cls}>${dt.d}<br>${dt.w}</th>`;
-  });
-  html += '<th>합계</th>';
-  document.getElementById('thead-row').innerHTML = html;
-}
-
-/* ===== Rows ===== */
-function buildRow(p, pi){
-  const tr = document.createElement('tr');
-  let html = `<td>${escapeHtml(p.name)} <button class="btn-del" onclick="delPerson(${pi})" title="삭제">×</button></td>`;
-  p.vals.forEach((v,ci)=>{
-    const cls = WEEKEND_IDX.includes(ci) ? ' class="weekend-col"' : (HIGHLIGHT_IDX.includes(ci)?' class="col-highlight"':'');
-    html += `<td${cls}><input class="cell-input" type="text" inputmode="decimal"
-      value="${v}" placeholder="-" data-pi="${pi}" data-ci="${ci}"
-      onchange="handleChange(this)" onkeydown="handleKey(event)"></td>`;
-  });
-  html += `<td class="total-cell">${getTotal(p.vals)}</td>`;
-  tr.innerHTML = html;
-  return tr;
-}
-
-function render(){
-  buildHead();
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML='';
-  state.people.forEach((p,pi)=>tbody.appendChild(buildRow(p,pi)));
-  document.getElementById('in-new').value = state.newRental;
-  document.getElementById('in-codi').value = state.codi;
-  document.getElementById('m-dday').textContent = ddayText();
-  refreshAll();
-}
-
-function refreshRowTotal(pi){
-  const row = document.getElementById('tbody').children[pi];
-  if(row) row.querySelector('.total-cell').textContent = getTotal(state.people[pi].vals);
-}
-
-function refreshAll(){
-  const conv = teamConv();
-  const newV = parseFloat(state.newRental)||0;
-  const codiV = parseFloat(state.codi)||0;
-
-  // metrics
-  document.getElementById('m-conv').textContent = conv;
-  document.getElementById('m-pct').textContent = Math.min(100,Math.round(conv/GOAL_CONV*100))+'%';
-
-  // path 1
-  const p1met = conv >= GOAL_CONV;
-  document.getElementById('g1-num').innerHTML = `<b>${conv}</b> / 60건`;
-  document.getElementById('g1-num').classList.toggle('met',p1met);
-  setBar('g1-bar', conv/GOAL_CONV, p1met);
-  document.getElementById('goal1').classList.toggle('met',p1met);
-
-  // path 2
-  const nMet = newV>=GOAL_NEW, cMet = codiV>=GOAL_CODI;
-  setBar('g2n-bar', newV/GOAL_NEW, nMet);
-  setBar('g2c-bar', codiV/GOAL_CODI, cMet);
-  const p2met = nMet && cMet;
-  document.getElementById('goal2').classList.toggle('met',p2met);
-
-  // banner
-  const done = p1met || p2met;
-  const banner = document.getElementById('result-banner');
-  if(done){
-    banner.className='result-banner result-pass';
-    banner.innerHTML='🎉 계곡 힐링 확정! 7/3(금) 시원한 계곡에서 만나요 🌲';
-  }else{
-    const needC = r1(Math.max(0,GOAL_CONV-conv));
-    const needN = Math.max(0,GOAL_NEW-newV), needCo = Math.max(0,GOAL_CODI-codiV);
-    banner.className='result-banner result-wait';
-    banner.innerHTML=`목표까지 — 환산 <b>${needC}건</b> 더 &nbsp;또는&nbsp; 신규 <b>${needN}건</b>+코디 <b>${needCo}명</b> 더 🚩`;
+  let base=0,bonus=0,missing=[];
+  const cat={}; CATS.forEach(c=>cat[c.k]={base:0,bonus:0});
+  for(const m of ITEMS){
+    const r=I[m.id];
+    r.missing = m.baseMax ? r.base===null : r.bonus===null;
+    if(r.missing){ if(!m.optional)missing.push(m.name); continue; }
+    base+=r.base||0; bonus+=r.bonus||0;
+    cat[m.cat].base+=r.base||0; cat[m.cat].bonus+=r.bonus||0;
   }
-
-  renderPerson();
-  saveData();
+  return {items:I,base,bonus,ded,total:base+bonus-ded,missing,cat};
 }
 
-function setBar(id, ratio, met){
-  const el=document.getElementById(id);
-  el.style.width = Math.min(100, Math.max(0, ratio*100))+'%';
-  el.classList.toggle('met', met);
-}
-
-function renderPerson(){
-  const target = r1(GOAL_CONV / Math.max(1,state.people.length));
-  document.getElementById('percap-note').textContent = `(1인 권장 ${target}건)`;
-  document.getElementById('progress-section').innerHTML = state.people.map(p=>{
-    const total = getTotal(p.vals);
-    const pct = Math.min(100, Math.round(total/target*100));
-    const cls = total>=target ? 'bar-pass' : (total>=target*0.6 ? 'bar-almost':'bar-fail');
-    return `<div class="person-progress">
-      <div class="progress-header">
-        <span class="progress-name">${escapeHtml(p.name)}</span>
-        <span class="progress-count">${total}건</span>
-      </div>
-      <div class="progress-bar-wrap"><div class="progress-bar ${cls}" style="width:${pct}%"></div></div>
-    </div>`;
-  }).join('');
-}
-
-/* ===== Input handlers ===== */
-function handleChange(input){
-  const pi=+input.dataset.pi, ci=+input.dataset.ci;
-  const num=parseFloat(input.value.trim());
-  state.people[pi].vals[ci] = isNaN(num)?'':String(num);
-  input.value = state.people[pi].vals[ci];
-  refreshRowTotal(pi);
-  refreshAll();
-}
-function handleKey(e){
-  if(e.key==='Enter'||e.key==='Tab'){
-    e.preventDefault();
-    const inputs=Array.from(document.querySelectorAll('.cell-input'));
-    const idx=inputs.indexOf(e.target);
-    const next = e.key==='Tab'
-      ? (e.shiftKey?inputs[idx-1]:inputs[idx+1])
-      : (inputs[idx+COL_COUNT]||inputs[idx+1]);
-    if(next){ next.focus(); next.select(); }
+// 항목별 "다음 구간" 레버
+function bump(s,k,d){const x=vv(s,k);s[k]=(x===null?0:x)+d;}
+const ITEM_LEVER = {
+  nrImpr:{f:(s,k)=>bump(s,'nrOrders',k),u:'신규렌탈'},
+  apRate:{f:(s,k)=>bump(s,'apIn',k),u:'청정기 재렌탈'},
+  owRate:{f:(s,k)=>bump(s,'owIn',k),u:'소유권 재렌탈'},
+  owImpr:{f:(s,k)=>bump(s,'owIn',k),u:'소유권 재렌탈'},
+  fl:{f:(s,k)=>{bump(s,'flEnv6',k);bump(s,'rentalOrders',k);},u:'6년 약정 판매'},
+  gr:{f:(s,k)=>bump(s,'grCur',k),u:'정·청·비 신규'},
+  smRate:{f:(s,k)=>bump(s,'smIn',k),u:'자가관리 재렌탈'},
+  pc:{f:(s,k)=>bump(s,'pcGeneral',k),u:'사전계약 재렌탈'},
+  cancel:{f:(s,k)=>bump(s,'rentReturns',-k),u:'해약',neg:'rentReturns'},
+  net:{f:(s,k)=>bump(s,'rentalOrders',k),u:'렌탈 순주문'},
+  mb:{f:(s,k)=>bump(s,'mbMem',k),u:'도래 멤버십 가입'}
+};
+function itemTotal(res,id){const r=res.items[id];return (r.base||0)+(r.bonus||0);}
+function itemNext(s,id){
+  const L=ITEM_LEVER[id]; if(!L)return null;
+  const res=compute(s); if(res.items[id].missing)return null;
+  const cur=itemTotal(res,id); const m=META[id];
+  if(cur>=m.baseMax+m.bonusMax-EPS)return {max:true};
+  const lim=L.neg?Math.floor(zz(s,L.neg)):300;
+  for(let k=1;k<=lim;k++){
+    const s2=Object.assign({},s); L.f(s2,k);
+    const t=itemTotal(compute(s2),id);
+    if(t>cur+1e-6)return {k,gain:t-cur,u:L.u,neg:!!L.neg};
   }
-}
-function setExtra(key,val){
-  const num=parseFloat(String(val).trim());
-  state[key]= isNaN(num)?'':String(num);
-  refreshAll();
+  return null;
 }
 
-function addPerson(){
-  const inp=document.getElementById('new-name');
-  const name=inp.value.trim();
-  if(!name) return;
-  state.people.push({name, vals:Array(COL_COUNT).fill('')});
-  inp.value='';
-  render();
+// 종합 시뮬레이션 레버 (연관 항목 동시 반영)
+const LEVERS = [
+  {name:'정·청·비 신규렌탈 (6년 약정)',main:'grCur',inc:['grCur','nrOrders','rentalOrders','flEnv6'],d:1,
+   eff:'성장률·생산율 개선율·금융리스·계정순증'},
+  {name:'소유권 재렌탈 유입 (6년 약정)',main:'owIn',inc:['owIn','rentalOrders','mbRerental','flEnv6'],d:1,
+   eff:'소유권 유입률·개선율·계정순증·멤버십'},
+  {name:'청정기 소유권 재렌탈 (6년 약정)',main:'apIn',inc:['apIn','owIn','rentalOrders','mbRerental','flEnv6'],d:1,
+   eff:'청정기 유입률·소유권 유입률·계정순증'},
+  {name:'자가관리 소유권 재렌탈 (6년 약정)',main:'smIn',inc:['smIn','rentalOrders','mbRerental','flEnv6'],d:1,
+   eff:'자가관리 유입률·유입건 가점·계정순증(1.5건)'},
+  {name:'사전계약·청약 재렌탈 (6년 약정)',main:'pcGeneral',inc:['pcGeneral','owIn','rentalOrders','mbRerental','flEnv6'],d:1,
+   eff:'사전계약 유입률·소유권 유입률·계정순증'},
+  {name:'멤버십 가입 (도래 고객)',main:'mbMem',inc:['mbMem'],d:1,eff:'멤버십 유입률'},
+  {name:'렌탈 해약 방어',main:'rentReturns',inc:['rentReturns'],d:-1,eff:'해약률·계정순증'}
+];
+function totalNoManual(res){return res.base+res.bonus;}
+function simulate(s){
+  const cur=totalNoManual(compute(s)); const out=[];
+  for(const L of LEVERS){
+    if(vv(s,L.main)===null)continue;
+    const lim=L.d<0?Math.floor(vv(s,L.main)):60;
+    let best=null;
+    for(let k=1;k<=lim;k++){
+      const s2=Object.assign({},s);
+      for(const key of L.inc){ if(vv(s2,key)!==null) s2[key]=vv(s2,key)+L.d*k; }
+      const t=totalNoManual(compute(s2));
+      if(t>cur+1e-6){best={k,gain:t-cur};break;}
+    }
+    if(best){
+      const s5=Object.assign({},s); const k5=Math.min(L.d<0?lim:5,lim);
+      for(const key of L.inc){ if(vv(s5,key)!==null) s5[key]=vv(s5,key)+L.d*k5; }
+      best.k5=k5; best.gain5=totalNoManual(compute(s5))-cur;
+      out.push(Object.assign({},L,best,{eff2:best.gain/best.k}));
+    }
+  }
+  return out.sort((a,b)=>b.eff2-a.eff2);
 }
-function delPerson(pi){
-  if(!confirm(state.people[pi].name+' 님을 삭제할까요?')) return;
-  state.people.splice(pi,1);
-  render();
-}
-function resetAll(){
-  if(!confirm('모든 실적을 초기화할까요?')) return;
-  state={ people: DEFAULT_PEOPLE.map(p=>({name:p.name, vals:[...p.vals]})), newRental:'', codi:'' };
-  render();
-}
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+/*CALC_END*/
 
-render();
+/* ---------------- UI ---------------- */
+const NEEDS = {
+  nrCount:['orgN','rkNrCount'], nrRate:['orgN','rkNrRate'],
+  nrImpr:['nrOrders','accounts',{any:['nrP1','nrP2','nrP3','nrUpperImpr'],label:'직전 3개월 생산율'}],
+  lumpsum:['lumpsum'], rrOther:['orgN','rkRrOther'],
+  apRate:['apIn','apDue'], owRate:['owIn','owDue'],
+  owImpr:['owIn','owDue',{any:['owP1','owP2','owP3','owUpperImpr'],label:'직전 3개월 유입률'}],
+  stCount:['orgN','rkSt'],
+  fl:['rentalOrders',{any:['flEnv5','flEnv6','flOther'],label:'금융리스 약정 건수'}],
+  gr:['grCur',{any:['grP1','grP2','grP3','grUpper'],label:'직전 3개월 정·청·비 신규'}],
+  smRate:['smIn','smDue'], pc:['dueAll',{any:['pcGeneral','pcSelf'],label:'사전계약·청약 재렌탈'}],
+  cancel:['rentReturns','accounts'], net:['rentalOrders','dueAll'],
+  mb:['mbDue',{any:['mbMem','mbOther'],label:'멤버십 가입 건수'}], org:['orgBase']
+};
+const BASE_KEYS=['orgN','accounts','rentalOrders','rentReturns','dueAll'];
+function missingNeeds(id){
+  const out=[];
+  for(const n of (NEEDS[id]||[])){
+    if(typeof n==='string'){ if(vv(state,n)===null) out.push(FIELDS[n].label+(BASE_KEYS.includes(n)?'(홈)':'')); }
+    else if(!n.any.some(k=>vv(state,k)!==null)) out.push(n.label);
+  }
+  return out;
+}
+const TAB_OF_CAT={'신규렌탈':'nr','재렌탈':'rr','전략':'st','관리':'mg','조직':'mg'};
+function goTo(tab,cardId){
+  const b=document.querySelector(`nav button[data-tab="${tab}"]`); if(b)b.click();
+  if(cardId){const el=document.getElementById(cardId); if(el){
+    const y=el.getBoundingClientRect().top+window.scrollY-8;
+    window.scrollTo({top:y,behavior:'smooth'});}}
+}
+function renderScoreTable(res){
+  const el=document.getElementById('scoreTable'); if(!el)return;
+  const my=(r,m)=>{
+    if(r.missing)return '<span class="na">미입력</span>';
+    let h='';
+    if(m.baseMax)h+=`<b>${f2(r.base)}</b>`;
+    if(m.bonusMax)h+=`<span class="bn">+${f2(r.bonus)}</span>`;
+    return h;
+  };
+  let h=`<table class="tbl"><colgroup><col><col class="c-n"><col class="c-n"><col class="c-my"></colgroup><thead><tr><th class="l">평가항목</th><th>배점</th><th>가점</th><th>내 점수</th></tr></thead><tbody>`;
+  for(const c of CATS){
+    h+=`<tr class="catrow"><td colspan="4">${c.k} (${c.base})</td></tr>`;
+    for(const m of ITEMS.filter(x=>x.cat===c.k)){
+      h+=`<tr class="it" data-go="${TAB_OF_CAT[c.k]}" data-card="card-${m.id}"><td>${m.name}<small>${m.method}</small></td>
+        <td class="n">${m.baseMax||'-'}</td><td class="n">${m.bonusMax||''}</td><td class="n my">${my(res.items[m.id],m)}</td></tr>`;
+    }
+    if(c.k==='조직'){
+      for(const [k,nm] of [['dedHeart','하트서비스처리율'],['ded5200','5200 당일처리율'],['dedClaim','고객관리(클레임 건)']]){
+        const x=vv(state,k);
+        h+=`<tr class="it" data-go="mg" data-card="card-ded"><td>${nm}<small>절대평가</small></td><td class="n">-</td><td class="n">감점</td>
+          <td class="n my">${x?`<span class="dd">-${f2(Math.abs(x))}</span>`:'<span class="na">0</span>'}</td></tr>`;
+      }
+    }
+    const v=res.cat[c.k]; const d=c.k==='조직'?res.ded:0;
+    h+=`<tr class="sub"><td>소계</td><td class="n">${c.base}</td><td class="n">${c.k==='조직'?'4<small>감점</small>':(c.bonus||'')}</td>
+      <td class="n my"><b>${f2(v.base+v.bonus-d)}</b></td></tr>`;
+  }
+  h+=`<tr class="tot"><td>합계</td><td class="n">100</td><td class="n">19.5<small>감점</small></td><td class="n my"><b>${f2(res.total)}</b></td></tr>`;
+  h+=`</tbody></table><p class="desc" style="margin:8px 0 0">재접수는 평가 실적에서 제외 · 내 점수의 보라색은 가점</p>`;
+  el.innerHTML=h;
+  el.querySelectorAll('tr[data-go]').forEach(tr=>tr.onclick=()=>goTo(tr.dataset.go,tr.dataset.card));
+}
+const FIELDS = {
+  month:{label:'평가월',type:'text',ph:'2026.10',wide:false},
+  orgN:{label:'비교 조직 수',unit:'개',hint:'상대평가 순위를 매기는 전체 지국팀 수'},
+  accounts:{label:'렌탈관리계정',unit:'계정',hint:'생산율·해약률·高생산율에 공통 사용'},
+  rentalOrders:{label:'당월 렌탈 순주문',unit:'건',hint:'신규+재렌탈 전체, 재접수 제외'},
+  rentReturns:{label:'렌탈관리 반환(해약)',unit:'건',hint:'해약 제외사유 건 제외, 해체확정일 기준'},
+  dueAll:{label:'소유권 도래 (전체)',unit:'계정',hint:'자가관리·전기레인지 포함 (순증·사전계약 공통)'},
+  nrOrders:{label:'신규렌탈 순주문',unit:'건',wide:true},
+  nrReturns:{label:'14일 이내 반환',unit:'건'},
+  rkNrCount:{label:'건수 순위',unit:'위'},
+  rkNrRate:{label:'생산율 순위',unit:'위'},
+  nrP1:{label:'직전 1개월 생산율',unit:'%'},nrP2:{label:'직전 2개월 생산율',unit:'%'},nrP3:{label:'직전 3개월 생산율',unit:'%'},
+  nrUpperImpr:{label:'상위조직 개선율',unit:'%',hint:'직전3개월 실적이 모두 0일 때만'},
+  lumpsum:{label:'소속 지국 일시불 매출',unit:'만원',hint:'지국팀은 지국 점수 적용'},
+  rkRrOther:{label:'소유권 외 재렌탈 순위',unit:'위'},
+  apIn:{label:'청정기 재렌탈 유입',unit:'건',hint:'재접수 제외'},
+  apDue:{label:'청정기 소유권 도래',unit:'계정',hint:'자가관리 제외'},
+  apUpper:{label:'상위조직 유입률',unit:'%',hint:'도래 3건 미만일 때만'},
+  owIn:{label:'소유권 재렌탈 유입',unit:'건',hint:'정수기·청정기·비데·연수기, 재접수 제외'},
+  owDue:{label:'소유권 도래',unit:'계정',hint:'자가관리·전기레인지 제외'},
+  owP1:{label:'직전 1개월 유입률',unit:'%'},owP2:{label:'직전 2개월 유입률',unit:'%'},owP3:{label:'직전 3개월 유입률',unit:'%'},
+  owUpperImpr:{label:'상위조직 개선율',unit:'%',hint:'직전3개월 실적이 모두 0일 때만'},
+  rkSt:{label:'전략제품 순위',unit:'위'},
+  stN1:{label:'1.0건군 신규',unit:'건',hint:'의료기기·음식물처리기·웨어러블(단기)'},
+  stR1:{label:'1.0건군 재렌탈',unit:'건',hint:'0.5건 환산'},
+  stN15:{label:'1.5건군 신규',unit:'건',hint:'침대·스마트매트리스·안마의자·BEREX R/M'},
+  stR15:{label:'1.5건군 재렌탈',unit:'건',hint:'0.5건 환산'},
+  stN2:{label:'2.0건군 신규',unit:'건',hint:'에어컨·웨어러블(5년)·BEREX 의료기기'},
+  stR2:{label:'2.0건군 재렌탈',unit:'건',hint:'0.5건 환산'},
+  flEnv5:{label:'환경가전 5년 약정',unit:'건',hint:'0.7건 환산'},
+  flEnv6:{label:'환경가전 6년 이상',unit:'건',hint:'1건'},
+  flOther:{label:'환경가전 외 5년 이상',unit:'건',hint:'BEREX·전기레인지·의류청정기 1건'},
+  grCur:{label:'당월 정·청·비 신규',unit:'건',hint:'순주문 − 14일 반환'},
+  grP1:{label:'직전 1개월',unit:'건'},grP2:{label:'직전 2개월',unit:'건'},grP3:{label:'직전 3개월',unit:'건'},
+  grUpper:{label:'상위조직 성장률',unit:'%',hint:'직전3개월 실적이 모두 0일 때만'},
+  smIn:{label:'자가관리 재렌탈 유입',unit:'건',hint:'전기레인지 포함, 재접수 제외'},
+  smDue:{label:'자가관리 소유권 도래',unit:'계정',hint:'전기레인지 제외'},
+  smJiguk:{label:'소속 지국 유입률',unit:'%',hint:'팀 도래 5건 미만일 때만'},
+  pcGeneral:{label:'사전계약·청약 재렌탈',unit:'건',hint:'자가관리 외'},
+  pcSelf:{label:'그중 자가관리',unit:'건',hint:'1건 → 1.5건'},
+  mbMem:{label:'멤버십 – 도래 고객',unit:'건',hint:'1.0건'},
+  mbOther:{label:'멤버십 – 도래 외',unit:'건',hint:'0.5건'},
+  mbQuit:{label:'직전1개월 가입 후 탈퇴',unit:'건'},
+  mbDue:{label:'소유권 도래',unit:'계정',hint:'전기레인지 제외'},
+  mbRerental:{label:'당월 소유권 재렌탈',unit:'건'},
+  orgBase:{label:'인당평균계정&모집',unit:'점',hint:'0~5'},
+  orgBonus:{label:'인당평균계정 가점',unit:'점',hint:'0~1'},
+  leadBonus:{label:'팀장임용 가점',unit:'점',hint:'0~3'},
+  dedHeart:{label:'하트서비스 감점',unit:'점'},
+  ded5200:{label:'5200 당일처리 감점',unit:'점'},
+  dedClaim:{label:'고객관리(클레임) 감점',unit:'점'}
+};
+
+const NAV_ICONS = {"base": "<svg viewBox=\"0 0 24 24\"><path d=\"M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z\"/></svg>", "nr": "<svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"4.5\"/><path d=\"M12 8.5v7M8.5 12h7\"/></svg>", "rr": "<svg viewBox=\"0 0 24 24\"><path d=\"M19.5 9A7.5 7.5 0 0 0 6 6.6L4.5 8\"/><path d=\"M4.5 4v4h4\"/><path d=\"M4.5 15A7.5 7.5 0 0 0 18 17.4l1.5-1.4\"/><path d=\"M19.5 20v-4h-4\"/></svg>", "st": "<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><circle cx=\"12\" cy=\"12\" r=\"0.9\" fill=\"currentColor\"/></svg>", "mg": "<svg viewBox=\"0 0 24 24\"><rect x=\"5.5\" y=\"4.5\" width=\"13\" height=\"16\" rx=\"2.5\"/><path d=\"M9 4.5V3.5h6v1\"/><path d=\"m9 12.5 2 2 4-4\"/></svg>", "an": "<svg viewBox=\"0 0 24 24\"><path d=\"M5 19.5V13M10 19.5V9M15 19.5v-4.5M20 19.5V5\"/><path d=\"M3.5 19.5h17\"/></svg>"};
+const TABS = [
+  {id:'base',title:'홈',ic:'●',cards:[
+    {scoreTable:true},
+    {title:'기초 데이터',desc:'여러 항목에 공통으로 쓰이는 값입니다. 먼저 입력하세요.',
+     fields:['month','orgN','accounts','rentalOrders','rentReturns','dueAll']}
+  ]},
+  {id:'nr',title:'신규',cat:'신규렌탈',ic:'',cards:[
+    {item:'nrCount',fields:['nrOrders','rkNrCount','nrReturns'],linked:['orgN']},
+    {item:'nrRate',fields:['rkNrRate'],linked:['accounts','orgN']},
+    {item:'nrImpr',fields:['nrP1','nrP2','nrP3','nrUpperImpr'],linked:['nrOrders','accounts']},
+    {item:'lumpsum',fields:['lumpsum']}
+  ]},
+  {id:'rr',title:'재렌탈',cat:'재렌탈',ic:'',cards:[
+    {item:'rrOther',fields:['rkRrOther'],linked:['orgN']},
+    {item:'apRate',fields:['apIn','apDue','apUpper']},
+    {item:'owRate',fields:['owIn','owDue']},
+    {item:'owImpr',fields:['owP1','owP2','owP3','owUpperImpr'],linked:['owIn','owDue']}
+  ]},
+  {id:'st',title:'전략',cat:'전략',ic:'',cards:[
+    {item:'stCount',fields:['rkSt','stN1','stR1','stN15','stR15','stN2','stR2'],linked:['orgN']},
+    {item:'fl',fields:['flEnv5','flEnv6','flOther'],linked:['rentalOrders']},
+    {item:'gr',fields:['grCur','grP1','grP2','grP3','grUpper'],linked:['accounts']},
+    {item:'smRate',fields:['smIn','smDue','smJiguk']},
+    {item:'pc',fields:['pcGeneral','pcSelf'],linked:['dueAll']}
+  ]},
+  {id:'mg',title:'관리·조직',cat:'관리',ic:'',cards:[
+    {item:'cancel',fields:[],linked:['rentReturns','accounts']},
+    {item:'net',fields:[],linked:['rentalOrders','smIn','rentReturns','dueAll']},
+    {item:'mb',fields:['mbMem','mbOther','mbQuit','mbDue','mbRerental']},
+    {item:'org',fields:['orgBase','orgBonus']},
+    {item:'lead',fields:['leadBonus']},
+    {id:'card-ded',title:'감점',desc:'하트서비스처리율 · 5200 당일처리율 · 고객관리(클레임) — 본사 통보 감점을 양수로 입력',
+     fields:['dedHeart','ded5200','dedClaim']}
+  ]},
+  {id:'an',title:'분석',ic:'↗',analysis:true}
+];
+
+const LS_KEY='coway-cl-eval-2026';
+let state={};
+try{state=JSON.parse(localStorage.getItem(LS_KEY)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+let activeTab='base';
+try{activeTab=localStorage.getItem(LS_KEY+'-tab')||'base';}catch(e){}
+
+function esc(x){return String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fieldHTML(key){
+  const f=FIELDS[key]; const val=state[key]??''; const isText=f.type==='text';
+  return `<label class="fld${f.wide?' wide':''}"><span class="fl">${f.label}</span>
+    <span class="inp"><input data-k="${key}" type="text" inputmode="decimal" autocomplete="off"
+      value="${esc(val)}" placeholder="${f.ph||''}"><em>${f.unit||''}</em></span>
+    ${f.hint?`<small>${f.hint}</small>`:''}</label>`;
+}
+function cardHTML(c){
+  if(c.scoreTable) return `<section class="card"><h2>경영평가 항목 및 배점</h2>
+    <p class="desc">본사 배점표 기준 · 항목을 누르면 입력 화면으로 이동합니다.</p><div id="scoreTable"></div></section>`;
+  if(c.tools) return `<section class="card"><h2>데이터 관리</h2>
+    <p class="desc">입력값은 이 휴대폰에 자동 저장됩니다. 월이 바뀌면 초기화 후 새로 입력하세요.</p>
+    <div class="btns"><button class="btn" id="bSample">예시값 채우기</button>
+    <button class="btn" id="bPrint">인쇄 / PDF</button><button class="btn danger" id="bReset">전체 초기화</button></div></section>`;
+  if(!c.item) return `<section class="card"${c.id?` id="${c.id}"`:''}><h2>${c.title}</h2>${c.desc?`<p class="desc">${c.desc}</p>`:''}
+    <div class="grid">${c.fields.map(fieldHTML).join('')}</div></section>`;
+  const m=META[c.item];
+  return `<section class="card item" id="card-${m.id}">
+    <header><h3>${m.name}</h3><div class="chips">
+      ${m.baseMax?`<span class="chip">배점 ${m.baseMax}</span>`:''}
+      ${m.bonusMax?`<span class="chip bonus">가점 ${m.bonusMax}</span>`:''}
+      <span class="chip ghost">${m.method}</span></div></header>
+    <p class="formula">${m.formula}</p>
+    ${c.linked?`<p class="linked">${c.linked.map(k=>`<span data-link="${k}">${FIELDS[k].label} <b>-</b></span>`).join('')}</p>`:''}
+    ${c.fields.length?`<div class="grid">${c.fields.map(fieldHTML).join('')}</div>`:''}
+    <div class="result wait" id="res-${m.id}"></div>
+    <details><summary>배점 기준 보기</summary><p>${m.rule}</p></details>
+  </section>`;
+}
+function build(){
+  document.getElementById('main').innerHTML=TABS.map(t=>`<div class="panel${t.id===activeTab?' on':''}" id="p-${t.id}">
+    ${t.analysis?'<div id="analysis"></div>':t.cards.map(cardHTML).join('')}</div>`).join('');
+  document.getElementById('nav').innerHTML=TABS.map(t=>`<button data-tab="${t.id}" class="${t.id===activeTab?'on':''}">
+    <span class="ic">${NAV_ICONS[t.id]}</span><span class="lb">${t.title}</span><span class="pt" id="np-${t.id}"></span></button>`).join('');
+  document.querySelectorAll('input[data-k]').forEach(el=>el.addEventListener('input',e=>{
+    const k=e.target.dataset.k;
+    {const c=e.target.value.replace(/[^0-9.\-]/g,'');if(c!==e.target.value)e.target.value=c;}
+    const val=e.target.value;
+    if(val==='')delete state[k]; else state[k]=val;
+    save(); update();
+  }));
+  document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
+    activeTab=b.dataset.tab; try{localStorage.setItem(LS_KEY+'-tab',activeTab);}catch(e){}
+    document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+activeTab));
+    document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+    window.scrollTo({top:0});
+  }));
+  const bs=document.getElementById('bSample'); if(bs)bs.onclick=()=>{if(Object.keys(state).length&&!confirm('현재 입력값을 예시값으로 덮어쓸까요?'))return;state=Object.assign({},SAMPLE);save();build();update();};
+  const br=document.getElementById('bReset'); if(br)br.onclick=()=>{if(!confirm('입력값을 모두 지울까요?'))return;state={};save();build();update();};
+  const bp=document.getElementById('bPrint'); if(bp)bp.onclick=()=>window.print();
+}
+
+function renderItem(res,id){
+  const el=document.getElementById('res-'+id); if(!el)return;
+  const m=META[id], r=res.items[id];
+  if(r.missing){const need=missingNeeds(id);el.className='result wait';
+    el.innerHTML=`<b>점수 계산 대기</b>${need.length?`<br>필요한 값: ${need.join(', ')}`:''}${r.note?`<br><span style="color:var(--warn)">${r.note}</span>`:''}`;return;}
+  el.className='result';
+  let h='<div class="scores">';
+  if(m.baseMax)h+=`<div class="sc"><b>${f2(r.base)}</b><span>/ ${m.baseMax}점</span></div>`;
+  if(m.bonusMax)h+=`<div class="sc bonus"><b>+${f2(r.bonus)}</b><span>/ 가점 ${m.bonusMax}</span></div>`;
+  h+='</div>';
+  if(r.info)h+=`<div class="info">${r.info}</div>`;
+  if(r.note)h+=`<div class="note">${r.note}</div>`;
+  if(m.rel){
+    const N=vv(state,'orgN');
+    if(N&&N>1){const rk=vv(state,m.rankKey);
+      h+=`<div class="next">순위 1단계 상승마다 <b>+${f2(m.baseMax/(N-1))}점</b>${rk>1?` · 1위 시 <b>+${f2(m.baseMax-r.base)}점</b>`:''}</div>`;}
+  } else if(id==='lumpsum'){
+    const a=vv(state,'lumpsum'); const steps=[50,100,150,200,250,300,350,400,450,500];
+    const nx=a<=0?null:steps.find(t=>t>a+EPS);
+    if(a<=0)h+=`<div class="next">매출 발생 시 <b>+0.1점</b>부터 시작</div>`;
+    else if(nx)h+=`<div class="next">지국 매출 <b>+${f2(nx-a)}만원</b> → ${nx}만원 구간 <b>+${f2(geTable(nx,T.lump,0)-r.bonus)}점</b></div>`;
+  } else {
+    const n=itemNext(state,id);
+    if(n&&n.max)h+=`<div class="next">✔ 이 항목 만점 달성</div>`;
+    else if(n)h+=`<div class="next">${n.u} <b>${n.neg?'−':'+'}${n.k}건</b>${n.neg?' 줄이면':' 더 하면'} <b>+${f2(n.gain)}점</b></div>`;
+  }
+  el.innerHTML=h;
+}
+
+function renderAnalysis(res){
+  const el=document.getElementById('analysis'); if(!el)return;
+  let h=`<section class="card"><h2>카테고리별 달성</h2><p class="desc">${esc(state.month||'평가월 미입력')} · 기본점수 달성률</p>`;
+  for(const c of CATS){
+    const v=res.cat[c.k]; const pct=c.base?Math.min(100,v.base/c.base*100):0;
+    h+=`<div class="row cr" style="display:block"><div style="display:flex;justify-content:space-between">
+      <b>${c.k}</b><span class="r">${f2(v.base)} / ${c.base}${c.bonus?` <span style="color:var(--bonus)">+${f2(v.bonus)}</span>`:''}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div></div>`;
+  }
+  h+=`<div class="row"><b>최종 점수</b><span class="r"><b style="font-size:18px;color:var(--accent)">${f2(res.total)}점</b></span></div></section>`;
+
+  const sims=simulate(state);
+  h+=`<section class="card rec"><h2>점수 올리기 추천</h2><p class="desc">추가 실적 1건당 점수 효율 순. 연관 항목(순증·멤버십 모수·금융리스 비중)을 함께 반영했고, 판매는 6년 약정 기준입니다. 상대평가 순위 변동은 포함되지 않습니다.</p>`;
+  if(!sims.length)h+=`<div class="empty">기초 데이터와 항목 실적을 입력하면 추천이 표시됩니다.</div>`;
+  sims.slice(0,7).forEach((x,i)=>{
+    h+=`<div class="lv"><span class="g">+${f2(x.gain)}점</span>
+      <div class="t">${i<3?`<span class="tag">TOP ${i+1}</span>`:''}${x.name}</div>
+      <div class="d">${x.d<0?'−':'+'}${x.k}건 시 +${f2(x.gain)}점 · ${x.d<0?'−':'+'}${x.k5}건 시 +${f2(x.gain5)}점</div>
+      <div class="d">영향: ${x.eff}</div></div>`;
+  });
+  h+=`</section>`;
+
+  const lost=ITEMS.filter(m=>m.baseMax&&!res.items[m.id].missing)
+    .map(m=>({m,lost:m.baseMax-(res.items[m.id].base||0)})).filter(x=>x.lost>0.001).sort((a,b)=>b.lost-a.lost);
+  h+=`<section class="card"><h2>놓친 기본점수</h2><p class="desc"${lost.length?'':' style="margin-bottom:0"'}>${lost.length?'배점 대비 부족한 점수가 큰 순서':'입력된 항목은 모두 만점이거나 아직 입력 전입니다.'}</p>`;
+  lost.forEach(x=>{h+=`<div class="row"><span>${x.m.name}<br><small style="color:var(--sub)">${x.m.method} · ${x.m.cat}</small></span>
+    <span class="r" style="color:var(--bad);font-weight:600">−${f2(x.lost)}</span></div>`;});
+  h+=`</section>`;
+
+  if(res.missing.length){
+    h+=`<section class="card"><h2>미입력 항목 ${res.missing.length}개</h2><p class="desc">입력하지 않은 항목은 0점으로 합산되어 있습니다.</p>
+    ${res.missing.map(n=>`<div class="row mr"><span>${n}</span></div>`).join('')}</section>`;
+  }
+  el.innerHTML=h;
+}
+
+function update(){
+  const res=compute(state);
+  document.getElementById('tTotal').innerHTML=`${f2(res.total)}<small>점</small>`;
+  document.getElementById('tBase').textContent=f2(res.base);
+  document.getElementById('tBonus').textContent='+'+f2(res.bonus);
+  document.getElementById('tDed').textContent='-'+f2(res.ded);
+  document.getElementById('tMiss').textContent=res.missing.length?`미입력 ${res.missing.length}개 항목 (0점 처리)`:'모든 항목 입력 완료';
+  document.getElementById('ttl').textContent=`${state.month?state.month+' · ':''}CL 경영평가 · 지국팀`;
+  document.getElementById('catbar').innerHTML=CATS.map(c=>{const v=res.cat[c.k];
+    return `<div class="cat">${c.k}<b>${f2(v.base+v.bonus)}<span style="font-weight:400;opacity:.75"> /${c.base}</span></b></div>`;}).join('');
+  for(const t of TABS){ if(!t.cat)continue; const el=document.getElementById('np-'+t.id);
+    if(el){const c=res.cat[t.cat]; let v=c.base+c.bonus; if(t.id==='mg')v+=res.cat['조직'].base+res.cat['조직'].bonus; el.textContent=v>0?(Math.round(v*10)/10).toFixed(1):'';} }
+  ITEMS.forEach(m=>renderItem(res,m.id));
+  renderScoreTable(res);
+  document.querySelectorAll('[data-link]').forEach(el=>{const k=el.dataset.link;const x=state[k];
+    el.querySelector('b').textContent=(x===undefined||x==='')?'미입력':x+(FIELDS[k].unit||'');});
+  renderAnalysis(res);
+}
+
+const SAMPLE={month:'2026.10',orgN:20,accounts:1200,rentalOrders:60,rentReturns:2,dueAll:40,
+  nrOrders:20,nrReturns:1,rkNrCount:5,rkNrRate:7,nrP1:1.4,nrP2:1.3,nrP3:1.5,lumpsum:230,
+  rkRrOther:6,apIn:8,apDue:13,owIn:22,owDue:37,owP1:58,owP2:55,owP3:60,
+  rkSt:4,stN1:1,stN15:2,stR15:1,flEnv5:10,flEnv6:30,flOther:2,
+  grCur:14,grP1:12,grP2:10,grP3:13,smIn:6,smDue:12,pcGeneral:10,pcSelf:3,
+  mbMem:8,mbOther:4,mbQuit:1,mbDue:36,mbRerental:22,orgBase:4};
+
+build(); update();
 </script>
 </body>
 </html>
