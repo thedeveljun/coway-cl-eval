@@ -232,7 +232,7 @@ const ITEMS = [
   formula:'소유권 재렌탈 유입 ÷ 소유권 도래(자가관리·전기레인지 제외) × 100',
   rule:'68%↑ 12 · 67↑ 11 · 66↑ 10 · 65↑ 9 · 64↑ 8 · 63↑ 7 · 61↑ 6 · 59↑ 5 · 57↑ 4 · 55↑ 3 · 53↑ 2 · 51↑ 1.5 · 49↑ 1 · 47↑ 0.5 · 47% 미만 0<br>고유입률 가점: 70%↑ +1 · 72%↑ +2 · 74%↑ +3'},
  {id:'owImpr',cat:'재렌탈',name:'소유권 재렌탈 유입률 개선율',baseMax:4,bonusMax:0,method:'절대평가',
-  formula:'당월 유입률 ÷ 직전3개월 평균 유입률 × 100',
+  formula:'당월 유입률 ÷ 직전3개월 평균 유입률 × 100 · 아래 입력값 단위는 %',
   rule:'120%↑ 4 · 110↑ 3.5 · 105↑ 3 · 100↑ 2.5 · 90↑ 2 · 70↑ 1.5 · 70% 미만 1'},
  {id:'stCount',cat:'전략',name:'전략제품 판매건수',baseMax:4,bonusMax:0,method:'상대평가',rel:true,rankKey:'rkSt',
   formula:'전략제품 순주문 − 14일 반환 (렌탈만, 환산건수)',
@@ -523,8 +523,8 @@ const FIELDS = {
   apUpper:{label:'상위조직 유입률',unit:'%',hint:'도래 3건 미만일 때만'},
   owIn:{label:'소유권 재렌탈 유입',unit:'건',hint:'정수기·청정기·비데·연수기, 재접수 제외'},
   owDue:{label:'소유권 도래',unit:'계정',hint:'자가관리·전기레인지 제외'},
-  owP1:{label:'직전 1개월 유입률',unit:'%'},owP2:{label:'직전 2개월 유입률',unit:'%'},owP3:{label:'직전 3개월 유입률',unit:'%'},
-  owUpperImpr:{label:'상위조직 개선율',unit:'%',hint:'직전3개월 실적이 모두 0일 때만'},
+  owP1:{label:'직전\n1개월',unit:'%'},owP2:{label:'직전\n2개월',unit:'%'},owP3:{label:'직전\n3개월',unit:'%'},
+  owUpperImpr:{label:'상위조직\n개선율',unit:'%'},
   rkSt:{label:'전략제품 순위',unit:'위'},
   stN1:{label:'1.0건군 신규',unit:'건',hint:'의료기기·음식물처리기·웨어러블(단기)'},
   stR1:{label:'1.0건군 재렌탈',unit:'건',hint:'0.5건 환산'},
@@ -556,7 +556,7 @@ const FIELDS = {
   dedClaim:{label:'고객관리(클레임) 감점',unit:'점'}
 };
 
-const APP_VER = '버전 2.9 (10/11 19:59)';
+const APP_VER = '버전 3.0 (10/11 20:00)';
 const NAV_ICONS = {"base": "<svg viewBox=\"0 0 24 24\"><path d=\"M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z\"/></svg>", "nr": "<svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"4.5\"/><path d=\"M12 8.5v7M8.5 12h7\"/></svg>", "rr": "<svg viewBox=\"0 0 24 24\"><path d=\"M19.5 9A7.5 7.5 0 0 0 6 6.6L4.5 8\"/><path d=\"M4.5 4v4h4\"/><path d=\"M4.5 15A7.5 7.5 0 0 0 18 17.4l1.5-1.4\"/><path d=\"M19.5 20v-4h-4\"/></svg>", "st": "<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><circle cx=\"12\" cy=\"12\" r=\"0.9\" fill=\"currentColor\"/></svg>", "mg": "<svg viewBox=\"0 0 24 24\"><rect x=\"5.5\" y=\"4.5\" width=\"13\" height=\"16\" rx=\"2.5\"/><path d=\"M9 4.5V3.5h6v1\"/><path d=\"m9 12.5 2 2 4-4\"/></svg>", "an": "<svg viewBox=\"0 0 24 24\"><path d=\"M5 19.5V13M10 19.5V9M15 19.5v-4.5M20 19.5V5\"/><path d=\"M3.5 19.5h17\"/></svg>"};
 const TABS = [
   {id:'base',title:'홈',ic:'●',cards:[
@@ -574,7 +574,7 @@ const TABS = [
     {item:'rrOther',fields:['rkRrOther'],linked:['orgN']},
     {item:'apRate',fields:['apIn','apDue','apUpper']},
     {item:'owRate',fields:['owIn','owDue']},
-    {item:'owImpr',fields:['owP1','owP2','owP3','owUpperImpr'],linked:['owIn','owDue']}
+    {item:'owImpr',cols:4,fields:['owP1','owP2','owP3','owUpperImpr'],linked:['owIn','owDue']}
   ]},
   {id:'st',title:'전략',cat:'전략',ic:'',cards:[
     {item:'stCount',fields:['rkSt','stN1','stR1','stN15','stR15','stN2','stR2'],linked:['orgN']},
