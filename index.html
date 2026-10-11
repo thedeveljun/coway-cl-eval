@@ -65,6 +65,8 @@ main{max-width:640px;margin:0 auto;padding:14px 14px 0}
 .fld.wide{grid-column:1/-1}
 .grid.g3{grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:6px;border:1px solid var(--edge);border-radius:10px;padding:8px 8px 10px;background:var(--card)}
 .grid.g3 .fl{text-align:center}
+.grid.g3 .inp{padding:0 5px}
+.grid.g3 .inp em{margin-left:2px}
 .grid.g4{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:8px 6px 10px}
 .grid.g4 .inp{padding:0 4px}
 .grid.g4 .inp em{display:none}
@@ -226,7 +228,7 @@ const ITEMS = [
  {id:'rrOther',cat:'재렌탈',name:'소유권 외 재렌탈 건수',baseMax:3,bonusMax:0,method:'상대평가',rel:true,rankKey:'rkRrOther',
   formula:'당월 소유권 외 재렌탈 순주문 − 14일 이내 반환',rule:'배점 × (전체조직수 − 순위) ÷ (전체조직수 − 1)'},
  {id:'apRate',cat:'재렌탈',name:'청정기 소유권 재렌탈 유입률',baseMax:3,bonusMax:0,method:'절대평가',
-  formula:'청정기 소유권 재렌탈 유입 ÷ 청정기 소유권 도래(자가관리 제외) × 100',
+  formula:'청정기 소유권 재렌탈 유입(재접수 제외) ÷ 청정기 소유권 도래(자가관리 제외) × 100 · 상위조직 유입률은 도래 3건 미만일 때만',
   rule:'65%↑ 3 · 60%↑ 2.5 · 55%↑ 1.5 · 45%↑ 1 · 35%↑ 0.5 · 35% 미만 0<br>도래 3건 미만이면 상위조직 유입률 적용'},
  {id:'owRate',cat:'재렌탈',name:'소유권 재렌탈 유입률',baseMax:12,bonusMax:3,method:'절대평가',
   formula:'소유권 재렌탈 유입 ÷ 소유권 도래(자가관리·전기레인지 제외) × 100',
@@ -518,9 +520,9 @@ const FIELDS = {
   nrUpperImpr:{label:'상위조직\n개선율',unit:'%'},
   lumpsum:{label:'소속 지국 일시불 매출',unit:'만원',hint:'지국팀은 지국 점수 적용'},
   rkRrOther:{label:'소유권 외 재렌탈 순위',unit:'위'},
-  apIn:{label:'청정기 재렌탈 유입',unit:'건',hint:'재접수 제외'},
-  apDue:{label:'청정기 소유권 도래',unit:'계정',hint:'자가관리 제외'},
-  apUpper:{label:'상위조직 유입률',unit:'%',hint:'도래 3건 미만일 때만'},
+  apIn:{label:'청정기\n재렌탈 유입',unit:'건'},
+  apDue:{label:'청정기\n소유권 도래',unit:'계정'},
+  apUpper:{label:'상위조직\n유입률',unit:'%'},
   owIn:{label:'소유권 재렌탈 유입',unit:'건',hint:'정수기·청정기·비데·연수기, 재접수 제외'},
   owDue:{label:'소유권 도래',unit:'계정',hint:'자가관리·전기레인지 제외'},
   owP1:{label:'직전\n1개월',unit:'%'},owP2:{label:'직전\n2개월',unit:'%'},owP3:{label:'직전\n3개월',unit:'%'},
@@ -556,7 +558,7 @@ const FIELDS = {
   dedClaim:{label:'고객관리(클레임) 감점',unit:'점'}
 };
 
-const APP_VER = '버전 3.0 (10/11 20:00)';
+const APP_VER = '버전 3.1 (10/11 20:02)';
 const NAV_ICONS = {"base": "<svg viewBox=\"0 0 24 24\"><path d=\"M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z\"/></svg>", "nr": "<svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"4.5\"/><path d=\"M12 8.5v7M8.5 12h7\"/></svg>", "rr": "<svg viewBox=\"0 0 24 24\"><path d=\"M19.5 9A7.5 7.5 0 0 0 6 6.6L4.5 8\"/><path d=\"M4.5 4v4h4\"/><path d=\"M4.5 15A7.5 7.5 0 0 0 18 17.4l1.5-1.4\"/><path d=\"M19.5 20v-4h-4\"/></svg>", "st": "<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><circle cx=\"12\" cy=\"12\" r=\"0.9\" fill=\"currentColor\"/></svg>", "mg": "<svg viewBox=\"0 0 24 24\"><rect x=\"5.5\" y=\"4.5\" width=\"13\" height=\"16\" rx=\"2.5\"/><path d=\"M9 4.5V3.5h6v1\"/><path d=\"m9 12.5 2 2 4-4\"/></svg>", "an": "<svg viewBox=\"0 0 24 24\"><path d=\"M5 19.5V13M10 19.5V9M15 19.5v-4.5M20 19.5V5\"/><path d=\"M3.5 19.5h17\"/></svg>"};
 const TABS = [
   {id:'base',title:'홈',ic:'●',cards:[
@@ -572,7 +574,7 @@ const TABS = [
   ]},
   {id:'rr',title:'재렌탈',cat:'재렌탈',ic:'',cards:[
     {item:'rrOther',fields:['rkRrOther'],linked:['orgN']},
-    {item:'apRate',fields:['apIn','apDue','apUpper']},
+    {item:'apRate',cols:3,fields:['apIn','apDue','apUpper']},
     {item:'owRate',fields:['owIn','owDue']},
     {item:'owImpr',cols:4,fields:['owP1','owP2','owP3','owUpperImpr'],linked:['owIn','owDue']}
   ]},
