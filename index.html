@@ -495,7 +495,7 @@ function renderScoreTable(res){
   el.querySelectorAll('tr[data-go]').forEach(tr=>tr.onclick=()=>goTo(tr.dataset.go,tr.dataset.card));
 }
 const FIELDS = {
-  month:{label:'평가월',type:'text',ph:'2026.10',wide:false},
+  month:{label:'평가월',type:'text',ph:'',wide:false},
   orgN:{label:'비교 조직 수',unit:'개',hint:'상대평가 순위를 매기는 전체 지국팀 수'},
   accounts:{label:'렌탈관리계정',unit:'계정',hint:'생산율·해약률·高생산율에 공통 사용'},
   rentalOrders:{label:'당월 렌탈 순주문',unit:'건',hint:'신규+재렌탈 전체, 재접수 제외'},
