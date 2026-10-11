@@ -87,24 +87,24 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;list-style:no
 details summary::-webkit-details-marker{display:none}
 details p{margin:6px 0 0;line-height:1.6}
 /* score table */
-.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
-.tbl th{background:var(--bg);color:var(--sub);font-weight:600;padding:6px 2px;font-size:13px;text-align:center}
+.tbl{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed}
+.tbl th{background:var(--bg);color:var(--sub);font-weight:600;padding:6px 2px;font-size:15px;text-align:center}
 .tbl th.l{text-align:left;padding-left:8px}
 .tbl td{padding:6px 2px;border-bottom:1px solid var(--line);vertical-align:middle}
 .tbl td:first-child{padding-left:8px}
-.tbl td small{display:block;color:var(--sub);font-size:12px;font-weight:500}
+.tbl td small{display:block;color:var(--sub);font-size:15px;font-weight:500}
 .tbl td.n{text-align:center;white-space:nowrap;border-left:1px solid var(--line)}
 .tbl th:not(.l){border-left:1px solid var(--line)}
-.tbl col.c-n{width:34px}.tbl col.c-my{width:52px}
-.tbl tr.catrow td{background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:13px}
+.tbl col.c-n{width:38px}.tbl col.c-my{width:58px}
+.tbl tr.catrow td{background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:15px}
 .tbl tr.sub td{font-weight:700;background:var(--bg)}
-.tbl tr.tot td{font-weight:800;font-size:14.5px;border-bottom:0;border-top:2px solid var(--ink)}
+.tbl tr.tot td{font-weight:800;font-size:15px;border-bottom:0;border-top:2px solid var(--ink)}
 .tbl tr.it{cursor:pointer}
 .tbl tr.it:active td{background:var(--accent-soft)}
-.my b{color:var(--good);font-size:14px}
-.tbl tr.tot .my b{color:var(--accent);font-size:16px}
-.my .bn{display:block;color:var(--bonus);font-size:12px;font-weight:700}
-.my .na{color:var(--sub);font-size:12.5px}
+.my b{color:var(--good);font-size:15px}
+.tbl tr.tot .my b{color:var(--accent);font-size:15px}
+.my .bn{display:block;color:var(--bonus);font-size:15px;font-weight:700}
+.my .na{color:var(--sub);font-size:15px}
 .my .dd{color:var(--bad);font-weight:700}
 /* analysis */
 .row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);gap:10px;font-size:15px}
@@ -548,7 +548,7 @@ const FIELDS = {
   dedClaim:{label:'고객관리(클레임) 감점',unit:'점'}
 };
 
-const APP_VER = '버전 1.9 (10/11 19:38)';
+const APP_VER = '버전 2.0 (10/11 19:40)';
 const NAV_ICONS = {"base": "<svg viewBox=\"0 0 24 24\"><path d=\"M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z\"/></svg>", "nr": "<svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"4.5\"/><path d=\"M12 8.5v7M8.5 12h7\"/></svg>", "rr": "<svg viewBox=\"0 0 24 24\"><path d=\"M19.5 9A7.5 7.5 0 0 0 6 6.6L4.5 8\"/><path d=\"M4.5 4v4h4\"/><path d=\"M4.5 15A7.5 7.5 0 0 0 18 17.4l1.5-1.4\"/><path d=\"M19.5 20v-4h-4\"/></svg>", "st": "<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><circle cx=\"12\" cy=\"12\" r=\"0.9\" fill=\"currentColor\"/></svg>", "mg": "<svg viewBox=\"0 0 24 24\"><rect x=\"5.5\" y=\"4.5\" width=\"13\" height=\"16\" rx=\"2.5\"/><path d=\"M9 4.5V3.5h6v1\"/><path d=\"m9 12.5 2 2 4-4\"/></svg>", "an": "<svg viewBox=\"0 0 24 24\"><path d=\"M5 19.5V13M10 19.5V9M15 19.5v-4.5M20 19.5V5\"/><path d=\"M3.5 19.5h17\"/></svg>"};
 const TABS = [
   {id:'base',title:'홈',ic:'●',cards:[
